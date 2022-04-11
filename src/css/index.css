@@ -25,15 +25,123 @@ button {
     font: inherit;
 }
 
+.sr-only {
+    position: absolute; 
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px; 
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap; /* added line */
+    border: 0;
+}
+
 body {
     font-family: 'Anek Tamil', sans-serif;
     height: 100vh;
     display: grid;
-    grid-template-rows: auto 1fr min-content;
+    grid-template-rows: min-content 1fr min-content;
 }
 
-body > * {
-    border: 2px solid yellowgreen;
+.primary-header {
+    padding: 10px;
+    display: grid;
+    justify-content: center;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
+}
+
+.primary-header .brand {
+    display: grid;
+    column-gap: 10px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.primary-header .brand-image {
+    width: clamp(80px, 10vw, 100px)
+}
+
+.primary-header .brand:not(:hover) .brand-image {
+    animation: shake 4.72s 3s cubic-bezier(.36,.07,.19,.97) infinite;
+}
+
+.primary-header .brand-text {
+    font-family: 'Permanent Marker', cursive;
+    text-transform: uppercase;
+    font-size: clamp(1.1rem, 4vw, 1.8rem);
+}
+
+.primary-header .brand-text span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.primary-header .brand-text-suprise {
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 500ms ease-in-out;
+}
+
+.primary-header .brand #left_eyebrow {
+    transform-origin: right;
+}
+
+.primary-header .brand #right_eyebrow {
+    transform-origin: left;
+}
+
+.primary-header .brand #left_eyebrow,
+.primary-header .brand #right_eyebrow {
+    transform-box: fill-box;
+    transition: transform 500ms ease-in-out;
+}
+
+.primary-header .brand:hover #left_eyebrow {
+    transform: rotate(10deg);
+}
+
+.primary-header .brand:hover #right_eyebrow {
+    transform: rotate(-10deg);
+}
+
+.primary-header .brand:hover .brand-text-suprise {
+    max-width: 150px;
+}
+
+.primary-header .mobile-nav-toggle {
+    display: none;
+}
+
+@media (max-width: 45rem) {
+    .primary-header {
+        column-gap: 10px;
+        grid-template-columns: 1fr min-content;
+        justify-items: initial;
+    }
+
+    .primary-header .brand {
+        grid-template-columns: min-content 1fr;
+        align-items: center;
+        justify-items: initial;
+    }
+
+    .primary-header .mobile-nav-toggle {
+        display: block;
+        width: 32px;
+        align-self: center;
+        aspect-ratio: 1;
+        border: none;
+        background-color: transparent;
+        background-image: url('../images/icon-hamburger.svg');
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .primary-header .mobile-nav-toggle[aria-expanded='true']{
+        background-image: url('../images/icon-close.svg');
+    }
 }
 
 main {
@@ -43,4 +151,15 @@ main {
 
 main > * {
     border: 2px solid maroon;
+}
+
+@keyframes shake {
+    0% { transform: translate(0, 0) }
+    1.78571% { transform: translate(5px, 0) }
+    3.57143% { transform: translate(0, 0) }
+    5.35714% { transform: translate(5px, 0) }
+    7.14286% { transform: translate(0, 0) }
+    8.92857% { transform: translate(5px, 0) }
+    10.71429% { transform: translate(0, 0) }
+    100% { transform: translate(0, 0) }
 }

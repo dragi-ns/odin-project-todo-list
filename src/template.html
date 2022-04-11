@@ -7,14 +7,23 @@
     <title>Todoin' | Odin Project</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil&family=Permanent+Marker&display=swap" rel="stylesheet"> 
 </head>
 <body>
     <header class="primary-header">
-        LOGO
+        <div class="brand">
+            <div class="brand-image">
+                <%= require('!svg-inline-loader!./images/joey.svg') %>
+            </div><!-- .brand-image -->
+            <div class="brand-text">
+                <span class="brand-text-suprise">How you</span>
+                <span>Todoin'</span>
+            </div><!-- .brand-text -->
+        </div><!-- .brand -->
+        <button class="mobile-nav-toggle" aria-controls="project-navigation" aria-expanded="false"><span class="sr-only">Menu</span></button>
     </header>
     <main id="main">
-        <nav>
+        <nav id="project-navigation">
             PROJECTS
         </nav>
         <section>

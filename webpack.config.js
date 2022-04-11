@@ -27,6 +27,14 @@ module.exports = {
       {
         test: /\.css$/i,
         use: [MiniCssExtractPlugin.loader, "css-loader"]
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/i,
+        exclude: /joey\.svg/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'images/[name].[contenthash][ext]'
+        }
       }
     ]
   },
