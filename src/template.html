@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil&family=Permanent+Marker&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
 </head>
 <body>
     <header class="primary-header">
@@ -23,8 +24,42 @@
         <button class="mobile-nav-toggle" aria-controls="project-navigation" aria-expanded="false"><span class="sr-only">Menu</span></button>
     </header>
     <main id="main">
-        <nav id="project-navigation">
-            PROJECTS
+        <nav id="project-navigation" data-visible="true" class="project-navigation">
+            <div class="navigation-section navigation-general">
+                <header class="navigation-section-header">
+                    <p class="navigation-section-title">General</p>
+                </header>
+                <div class="navigation-section-items">
+                    <button class="btn navigation-section-item">Inbox</button>
+                    <button class="btn navigation-section-item">Today</button>
+                    <button class="btn navigation-section-item">This week</button>
+                </div>
+            </div>
+            <div class="navigation-section navigation-projects">
+                <header class="navigation-section-header">
+                    <p class="navigation-section-title">Projects</p>
+                    <button class="btn new-project-modal-open" aria-controls="new-project-modal" aria-expanded="false">
+                        <span class="sr-only">New project</span>
+                        <span class="mdi mdi-plus-box-outline"></span>
+                    </button>
+                </header>
+                <div class="navigation-section-items">
+                    <button class="btn navigation-section-item">Gym</button>
+                    <button class="btn navigation-section-item">Shopping</button>
+                    <button class="btn navigation-section-item">School</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                    <button class="btn navigation-section-item">Work</button>
+                </div>
+            </div>
         </nav>
         <section>
             TASKS
