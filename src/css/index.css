@@ -142,18 +142,21 @@ body {
 
 .primary-header .mobile-nav-toggle {
     display: block;
-    width: 32px;
+    padding: 5px;
     align-self: center;
     aspect-ratio: 1;
     border: 0;
     background-color: transparent;
-    background-image: url('../images/icon-hamburger.svg');
-    background-repeat: no-repeat;
-    background-position: center;
 }
 
-.primary-header .mobile-nav-toggle[aria-expanded='true']{
-    background-image: url('../images/icon-close.svg');
+.primary-header .mobile-nav-toggle::before {
+    content: '\F035C';
+    font-family: 'Material Design Icons';
+    font-size: 1.8rem;
+}
+
+.primary-header .mobile-nav-toggle[aria-expanded='true']::before {
+    content: '\F0156';
 }
 
 .mobile-nav-toggle:focus-visible {
@@ -272,6 +275,7 @@ main {
 @media (min-width: 45em) {
     .project-navigation {
         position: static;
+        transform: translateX(0);
     }
 }
 
