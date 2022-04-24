@@ -52,7 +52,6 @@ function createTaskCompleteToggle(completed) {
                 const taskContainer = event.currentTarget.closest('.task');
                 const taskModel = TodoList.getTask(taskContainer.dataset.taskId);
                 taskModel.toggleCompleted();
-                console.log(TodoList.getDefaultProject());
             })
         ]
     });
