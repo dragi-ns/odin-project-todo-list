@@ -31,10 +31,12 @@ class Project {
             this.#tasks.push(newTask);
             newTask.project = this;
         }
+        return newTask;
     }
 
     addTasks(newTasks) {
         newTasks.forEach(this.addTask, this);
+        return newTasks;
     }
 }
 

@@ -1,17 +1,20 @@
-import { createElement, createEvent, render } from './utils';
+import { createButton, createElement, createEvent, render } from './utils';
 import { createProject, createNewProjectModal } from './project';
+import { openModal } from './modal';
 import TodoList from '../models/todo.js';
 
-function createNavigation(options, sections) {
-    if (!options.hasOwnProperty('children')) {
-        // TODO: This changes options object, maybe I should make a new object?
-        Object.assign(options, {
-            children: Object.keys(sections).map((sectionName) => {
-                return createNavigationSection(sectionName, sections[sectionName])
-            })
-        });
-    }
-    const navigationContainer = createElement(options);
+function createNavigation(sections) {
+    const navigationContainer = createElement({
+        tagName: 'nav',
+        attributes: {
+            id: 'project-navigation',
+            class: 'project-navigation',
+            'data-visible': false 
+        },
+        children: Object.keys(sections).map((sectionName) => {
+            return createNavigationSection(sectionName, sections[sectionName])
+        })
+    });
     initialize_navigation_toggle(navigationContainer);
     return navigationContainer;
 }
@@ -65,29 +68,20 @@ function createSectionHeaderAction() {
             class: 'navigation-section-actions'
         },
         children: [
-            createElement({
-                tagName: 'button',
-                attributes: {
+            createButton({
+                btnText: 'New Project',
+                btnAttributes: {
                     class: 'btn btn--square btn--medium new-project-modal-open'
                 },
-                children: [
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'sr-only'
-                        },
-                        content: 'New Project'
-                    }),
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'mdi mdi-plus-box-outline'
-                        }
-                    })
-                ],
+                iconAttributes: {
+                    class: 'mdi mdi-plus-box-outline'
+                },
+                showOnlyIcon: true,
                 events: [
                     createEvent('click', () => {
-                        render(createNewProjectModal(), document.body);
+                        const modal = createNewProjectModal();
+                        render(modal, document.body);
+                        openModal(modal);
                     })
                 ]
             })
@@ -124,20 +118,17 @@ function createSectionItem(item) {
         events: [
             createEvent('click', (event) => {
                 const projectId = event.currentTarget.dataset.projectId;
-                const project = TodoList.getProject(projectId) ?? TodoList.getDefaultProject();
-                document.querySelector(`#project-navigation [data-project-id="${TodoList.getActiveProject().id}"]`).classList.remove('active');
-                TodoList.getActiveProject().active = false;
-                project.active = true;
-                document.querySelector(`#project-navigation [data-project-id="${project.id}"]`).classList.add('active');
+
+                const currentActiveProject = TodoList.getActiveProject();
+                document.querySelector(`#project-navigation [data-project-id="${currentActiveProject.id}"]`).classList.remove('active');
+                currentActiveProject.active = false;
+
+                const nextActiveProject = TodoList.getProjectById(projectId) ?? TodoList.getDefaultProject();
+                nextActiveProject.active = true;
+                document.querySelector(`#project-navigation [data-project-id="${nextActiveProject.id}"]`).classList.add('active');
+
                 render(
-                    createProject({
-                        tagName: 'section',
-                        attributes: {
-                            id: 'project',
-                            class: 'project',
-                            'data-project-id': project.id
-                        }
-                    }, project), 
+                    createProject(nextActiveProject), 
                     document.querySelector('#main'),
                     true
                 );

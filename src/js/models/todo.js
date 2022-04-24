@@ -7,32 +7,7 @@ class TodoList {
             title: 'General',
             items: [
                 new Project('Inbox', [
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
-                    new Task('task 1', 'description 1', Task.Priority.HIGH, new Date()),
+                    new Task('task 1', 'description 1', new Date(), Task.Priority.HIGH)
                 ], true, true, false),
                 new Project('Today', [], false, true, true),
                 new Project('Upcoming', [], false, true, true)
@@ -44,20 +19,9 @@ class TodoList {
         }
     };
     
-    static getProject(projectId) {
+    static getProjectById(projectId) {
         for (const section in this.#projects) {
             const project = this.#projects[section].items.find((item) => item.id === projectId);
-            if (project) {
-                return project;
-            }
-        }
-        return undefined;
-    }
-
-    static getProjectByName(projectName) {
-        projectName = projectName.toLowerCase();
-        for (const section in this.#projects) {
-            const project = this.#projects[section].items.find((item) => item.name.toLowerCase() === projectName);
             if (project) {
                 return project;
             }
@@ -69,23 +33,6 @@ class TodoList {
         return this.#projects.default.items.find((item) => item.perserve && !item.dummy);
     }
 
-    static getProjects() {
-        return Object.assign({}, this.#projects);
-    }
-
-    static getRealProjectsArray() {
-        // :D
-        const smartProjects = [];
-        for (const section in this.#projects) {
-            for (const project of this.#projects[section].items) {
-                if (!project.dummy) {
-                    smartProjects.push(project);
-                }
-            }
-        }
-        return smartProjects;
-    }
-
     static getActiveProject() {
         for (const section in this.#projects) {
             for (const project of this.#projects[section].items) {
@@ -95,6 +42,29 @@ class TodoList {
             }
         }
         return undefined;
+    }
+
+    static getSections() {
+        return Object.assign({}, this.#projects);
+    }
+
+    static getProjects() {
+        return Object.keys(this.#projects).reduce((aggregator, section) => {
+            return aggregator.concat(this.#projects[section].items.filter((item) => !item.dummy))
+        }, []);
+    }
+
+    static addProject(newProject) {
+        const project = this.getProjectById(newProject.id);
+        if (!project) {
+            this.#projects.userProjects.items.push(newProject);
+        }
+        return newProject;
+    }
+
+    static addProjects(newProjects) {
+        newProjects.forEach(this.addProject, this);
+        return newProjects;
     }
 
     static getTask(taskId) {
@@ -109,16 +79,16 @@ class TodoList {
         return undefined;
     }
 
-    static addProject(newProject) {
-        const project = this.getProject(newProject.id);
-        if (!project) {
-            this.#projects.userProjects.items.push(newProject);
-        }
-        return newProject;
+    static addTask(projectId, newTask) {
+        const project = this.getProjectById(projectId) ?? this.getDefaultProject();
+        project.addTask(newTask);
+        return project;
     }
 
-    static addProjects(newProjects) {
-        newProjects.forEach(this.addProject, this);
+    static addTasks(projectId, newTasks) {
+        const project = this.getProjectById(projectId) ?? this.getDefaultProject();
+        project.addTasks(newTasks);
+        return newTasks;
     }
 }
 

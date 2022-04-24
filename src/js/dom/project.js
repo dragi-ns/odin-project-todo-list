@@ -1,21 +1,24 @@
-import { createElement, createEvent, render } from './utils';
+import { render, createElement, createEvent, createButton} from './utils';
 import { createTask, createNewTaskModal } from './task';
+import { createModal, openModal, closeModal } from './modal';
+import { isFormValid } from './form';
 import { createSectionItem } from './navigation';
-import { createModal } from './modal';
 import Project from '../models/project';
 import TodoList from '../models/todo';
 
-function createProject(options, project) {
-    if (!options.hasOwnProperty('children')) {
-        // NOTE: This changes options object, maybe I should make a copy?
-        Object.assign(options, {
-            children: [
-                createProjectHeader(project),
-                createProjectTasks(project.getTasks())
-            ]
-        });
-    }
-    return createElement(options);
+function createProject(project) {
+    return createElement({
+        tagName: 'section',
+        attributes: {
+            id: 'project',
+            class: 'project',
+            'data-project-id': project.id
+        },
+        children: [
+            createProjectHeader(project),
+            createProjectTasks(project.getTasks())
+        ]
+    });
 }
 
 function createProjectHeader(project) {
@@ -61,77 +64,56 @@ function createProjectHeaderActions(perserve, dummy) {
 }
 
 function createProjectAddTaskAction() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
+    return createButton({
+        btnText: 'New Task',
+        btnAttributes: {
             class: 'btn btn--square btn--medium new-task-modal-open'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'New Task'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-plus-box-outline'
-                }
-            })
-        ],
+        iconAttributes: {
+            class: 'mdi mdi-plus-box-outline'
+        },
+        showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                render(createNewTaskModal(), document.body);
+                const modal = createNewTaskModal();
+                render(modal, document.body);
+                openModal(modal);
             })
         ]
     });
 }
 
 function createProjectEditAction() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
-            class: 'btn btn--square btn--medium edit-project-modal-open'
+    return createButton({
+        btnText: 'Edit Project',
+        btnAttributes: {
+            class: 'btn btn--square btn--medium new-project-modal-open'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'Edit Project'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-square-edit-outline'
-                }
+        iconAttributes: {
+            class: 'mdi mdi-square-edit-outline'
+        },
+        showOnlyIcon: true,
+        events: [
+            createEvent('click', () => {
+                console.log('open edit project modal');
             })
         ]
     });
 }
 
 function createProjectDeleteAction() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
+    return createButton({
+        btnText: 'Delete Project',
+        btnAttributes: {
             class: 'btn btn--square btn--medium delete-project-modal-open'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'Delete Project'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-delete'
-                }
+        iconAttributes: {
+            class: 'mdi mdi-delete'
+        },
+        showOnlyIcon: true,
+        events: [
+            createEvent('click', () => {
+                console.log('open delete project modal');
             })
         ]
     });
@@ -142,15 +124,7 @@ function createProjectTasks(tasks) {
         attributes: {
             class: 'tasks'
         },
-        children: tasks.map((task) => {
-            return createTask({
-                tagName: 'article',
-                attributes: {
-                    class: 'task',
-                    'data-task-id': task.id
-                }
-            }, task);
-        })
+        children: tasks.map((task) => createTask(task))
     });
 }
 
@@ -158,7 +132,9 @@ function createNewProjectForm() {
     return createElement({
         tagName: 'form',
         attributes: {
-            id: 'new-project-form'
+            id: 'new-project-form',
+            class: 'form',
+            novalidate: true
         },
         children: [
             createElement({
@@ -179,8 +155,17 @@ function createNewProjectForm() {
                             type: 'text',
                             name: 'project-name',
                             id: 'project-name',
-                            placeholder: 'Work'
-                        }
+                            placeholder: 'Work',
+                            maxlength: 16,
+                            autocomplete: 'off',
+                            required: true
+                        },
+                        events: [
+                            createEvent('blur', (event) => {
+                                const input = event.currentTarget;
+                                input.value = input.value.trim();
+                            })
+                        ]
                     }),
                     createElement({
                         tagName: 'span',
@@ -194,35 +179,21 @@ function createNewProjectForm() {
         events: [
             createEvent('submit', (event) => {
                 event.preventDefault();
-                const input = event.currentTarget.elements['project-name'];
-                const projectName = input.value.trim();
-
-                let msg = null;
-                if (!projectName) {
-                    msg = 'is required!';
-                } else if (projectName.length > 16) {
-                    msg = `should have maximum 16 characters; you entered ${projectName.length}!`; 
-                } else if (TodoList.getProjectByName(projectName)) {
-                    msg = 'is already taken!';
-                } else {
-                    const project = new Project(projectName);
-                    TodoList.addProject(project);
-                    const parentElement = document.querySelector('#user-projects .navigation-section-items');
-                    render(
-                        createSectionItem(project),
-                        parentElement,
-                        parentElement.children.length === 1 && parentElement.children[0].tagName.toLowerCase() === 'p'
-                    );
-                    const modal = event.currentTarget.closest('.modal');
-                    modal.remove();
-                }
-
-                if (msg) {
-                    const inputLabel = input.previousElementSibling.textContent;
-                    const inputError = input.nextElementSibling;
-                    inputError.textContent = `${inputLabel} ${msg}`;
+                const form = event.currentTarget;
+                if (!isFormValid(form)) {
                     return;
                 }
+                const newProject = new Project(
+                    form.elements['project-name'].value
+                );
+                TodoList.addProject(newProject);
+                const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
+                render(
+                    createSectionItem(newProject),
+                    userProjectsContainer,
+                    userProjectsContainer.children.length === 1 && userProjectsContainer.children[0].tagName.toLowerCase() === 'p'
+                );
+                closeModal(form.closest('.modal'));
             })
         ]
     });
@@ -239,49 +210,30 @@ function createNewProjectModal() {
             createNewProjectForm()
         ],
         cardFooterChildren: [
-            createElement({
-                tagName: 'button',
-                attributes: {
+            createButton({
+                btnText: 'Cancel',
+                btnAttributes: {
                     class: 'btn'
                 },
-                children: [
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'mdi mdi-close'
-                        }
-                    }),
-                    createElement({
-                        tagName: 'span',
-                        content: 'Cancel'
-                    })
-                ],
+                iconAttributes: {
+                    class: 'mdi mdi-close'
+                },
                 events: [
                     createEvent('click', (event) => {
-                        const modal = event.currentTarget.closest('.modal');
-                        modal.remove();
+                        closeModal(event.currentTarget.closest('.modal'));
                     })
                 ]
             }),
-            createElement({
-                tagName: 'button',
-                attributes: {
-                    class: 'btn',
+            createButton({
+                btnText: 'Add Project',
+                btnAttributes: {
+                    class: 'btn btn--primary',
                     type: 'submit',
                     form: 'new-project-form'
                 },
-                children: [
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'mdi mdi-plus'
-                        }
-                    }),
-                    createElement({
-                        tagName: 'span',
-                        content: 'Add Project'
-                    })
-                ]
+                iconAttributes: {
+                    class: 'mdi mdi-plus'
+                }
             })
         ]
     });

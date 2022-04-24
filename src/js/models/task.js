@@ -10,12 +10,12 @@ class Task {
         HIGH: 'high'
     }); 
 
-    constructor(title, description, priority, dueDate, completed = false) {
+    constructor(title, description, dueDate, priority, completed = false) {
         this.#id = uuidv4();
         this.title = title;
         this.description = description;
-        this.priority = priority;
         this.dueDate = dueDate;
+        this.priority = priority;
         this.completed = completed;
         this.project = null;
     }

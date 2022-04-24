@@ -8,6 +8,12 @@
     box-sizing: border-box;
 }
 
+*:focus-visible,
+*:focus-visible::before,
+*:focus-visible::after {
+    outline: 2px solid hsl(var(--accent-color));
+}
+
 body,
 h1,
 h2,
@@ -59,6 +65,10 @@ body {
 /**************************
  * Utitlies               *
  **************************/
+
+.clipped {
+    overflow: hidden !important;
+}
 
 .sr-only {
     position: absolute; 
@@ -156,6 +166,7 @@ body {
     display: grid;
     column-gap: 10px;
     grid-auto-flow: column;
+    justify-content: start;
     align-items: center;
 }
 
@@ -333,7 +344,7 @@ main {
 }
 
 .project-navigation .navigation-section-item {
-    text-align: left;
+    justify-content: left;
     padding: 5px 10px;
 }
 
@@ -397,19 +408,19 @@ main {
     box-shadow: hsl(var(--dark-color) / .25) 0px 0px 5px 0px, hsl(var(--dark-color) / .25) 0px 0px 1px 0px;
 }
 
-.project .task[data-priority="normal"] {
+.project .task[data-task-priority="normal"] {
     border-left-color: white;
 }
 
-.project .task[data-priority="low"] {
+.project .task[data-task-priority="low"] {
     border-left-color: #2980b9;
 }
 
-.project .task[data-priority="medium"] {
+.project .task[data-task-priority="medium"] {
     border-left-color: #f39c12;
 }
 
-.project .task[data-priority="high"] {
+.project .task[data-task-priority="high"] {
     border-left-color: #e74c3c; 
 }
 
@@ -485,6 +496,7 @@ main {
 .project .task-priority-value,
 .project .task-project-value {
     font-weight: bold;
+    padding-left: 5px;
 }
 
 /**************************
@@ -519,6 +531,14 @@ main {
     align-items: center;
 }
 
+.modal.active {
+    animation: fadeIn 250ms ease-in-out forwards;
+}
+
+.modal.inactive {
+    animation: fadeOut 250ms ease-in-out;
+}
+
 .modal-card {
     width: 100%;
     max-height: calc(100vh - 50px);
@@ -528,6 +548,14 @@ main {
     flex-direction: column;
     position: relative;
     box-shadow: hsl(var(--dark-color) / .8) 0px 1px 4px;
+}
+
+.modal.inactive .modal-card {
+    animation: scaleOut 250ms ease-in-out;
+}
+
+.modal.active .modal-card {
+    animation: scaleIn 250ms ease-in-out forwards;
 }
 
 .modal-close-button {
@@ -546,6 +574,7 @@ main {
 
 .modal-card-body {
     padding: 20px 15px;
+    overflow: auto;
 }
 
 .modal-card-footer {
@@ -565,6 +594,11 @@ main {
 /**************************
  * Form                   *
  **************************/
+
+.form {
+    display: grid;
+    row-gap: 10px;
+}
 
 .form-field {
     display: flex;
@@ -605,4 +639,40 @@ main {
     8.92857% { transform: translate(5px, 0) }
     10.71429% { transform: translate(0, 0) }
     100% { transform: translate(0, 0) }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleOut {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
 }

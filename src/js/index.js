@@ -7,26 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainElement = document.querySelector('#main');
 
     render(
-        createNavigation({
-            tagName: 'nav',
-            attributes: {
-                id: 'project-navigation',
-                class: 'project-navigation',
-                'data-visible': false 
-            }
-        }, TodoList.getProjects()),
+        createNavigation(TodoList.getSections()),
         mainElement
     );
 
     render(
-        createProject({
-            tagName: 'section',
-            attributes: {
-                id: 'project',
-                class: 'project',
-                'data-project-id': TodoList.getDefaultProject().id
-            }
-        }, TodoList.getDefaultProject()),
+        createProject(TodoList.getActiveProject()),
         mainElement
     );
 });

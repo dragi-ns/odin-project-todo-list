@@ -1,21 +1,25 @@
 import { format } from 'date-fns';
-import { render, createElement, createEvent } from './utils';
-import { createModal } from './modal';
+import { render, createElement, createButton, createEvent } from './utils';
+import { createModal, closeModal } from './modal';
+import { createProject } from './project';
+import { isFormValid } from './form';
+import { toTitleCase } from '../utils';
 import Task from '../models/task';
 import TodoList from '../models/todo';
 
-function createTask(options, task) {
-    options.attributes['data-priority'] = task.priority;
-    if (!options.hasOwnProperty('children')) {
-        // NOTE: This changes options object, maybe I should make a copy?
-        Object.assign(options, {
-            children: [
-                createTaskHeader(task),
-                createTaskDetails(task)
-            ]
-        });
-    }
-    return createElement(options);
+function createTask(task) {
+    return createElement({
+        tagName: 'article',
+        attributes: {
+            class: 'task',
+            'data-task-id': task.id,
+            'data-task-priority': task.priority
+        },
+        children: [
+            createTaskHeader(task),
+            createTaskDetails(task)
+        ]
+    });
 }
 
 function createTaskHeader(task) {
@@ -45,8 +49,8 @@ function createTaskCompleteToggle(completed) {
         attributes,
         events: [
             createEvent('change', (event) => {
-                const taskElement = event.currentTarget.closest('.task');
-                const taskModel = TodoList.getTask(taskElement.dataset.taskId);
+                const taskContainer = event.currentTarget.closest('.task');
+                const taskModel = TodoList.getTask(taskContainer.dataset.taskId);
                 taskModel.toggleCompleted();
                 console.log(TodoList.getDefaultProject());
             })
@@ -105,58 +109,36 @@ function createTaskActions() {
 }
 
 function createTaskEditAction() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
+    return createButton({
+        btnText: 'Edit Task',
+        btnAttributes: {
             class: 'btn btn--square btn--medium edit-task-modal-open'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'Edit Task'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-square-edit-outline'
-                }
-            })
-        ],
+        iconAttributes: {
+            class: 'mdi mdi-square-edit-outline'
+        },
+        showOnlyIcon: true,
         events: [
             createEvent('click', (event) => {
-                console.log('Edit task');
+                console.log('edit task');
             })
         ]
     });
 }
 
 function createTaskDeleteAction() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
+    return createButton({
+        btnText: 'Delete Task',
+        btnAttributes: {
             class: 'btn btn--square btn--medium delete-task-modal-open'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'Delete Task'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-delete'
-                }
-            })
-        ],
+        iconAttributes: {
+            class: 'mdi mdi-delete'
+        },
+        showOnlyIcon: true,
         events: [
             createEvent('click', (event) => {
-                console.log('Delete task');
+                console.log('delete task');
             })
         ]
     });
@@ -170,7 +152,7 @@ function createTaskDetails(task) {
         children: [
             createTaskDescription(task.description),
             createTaskPriority(task.priority),
-            createTaskProject(task.project.name)
+            createTaskProject(task.project)
         ]
     });
 }
@@ -201,13 +183,13 @@ function createTaskPriority(priority) {
                 attributes: {
                     class: 'task-priority-value'
                 },
-                content: priority
+                content: toTitleCase(priority)
             }),
         ]
     });
 }
 
-function createTaskProject(projectName) {
+function createTaskProject(project) {
     return createElement({
         tagName: 'p',
         attributes: {
@@ -219,22 +201,44 @@ function createTaskProject(projectName) {
                 content: 'Project:'
             }),
             createElement({
-                tagName: 'span',
+                tagName: 'a',
                 attributes: {
-                    class: 'task-project-value'
+                    href: '#',
+                    class: 'task-project-value',
+                    'data-project-id': project.id
                 },
-                content: projectName
-            }),
+                content: project.name,
+                events: [
+                    createEvent('click', (event) => {
+                        const projectId = event.currentTarget.dataset.projectId;
+        
+                        const currentActiveProject = TodoList.getActiveProject();
+                        document.querySelector(`#project-navigation [data-project-id="${currentActiveProject.id}"]`).classList.remove('active');
+                        currentActiveProject.active = false;
+        
+                        const nextActiveProject = TodoList.getProjectById(projectId) ?? TodoList.getDefaultProject();
+                        nextActiveProject.active = true;
+                        document.querySelector(`#project-navigation [data-project-id="${nextActiveProject.id}"]`).classList.add('active');
+        
+                        render(
+                            createProject(nextActiveProject), 
+                            document.querySelector('#main'),
+                            true
+                        );
+                    }) 
+                ]
+            })
         ]
     });
 }
 
 function createNewTaskForm() {
-    console.log(TodoList.getRealProjectsArray());
     return createElement({
         tagName: 'form',
         attributes: {
-            id: 'new-task-form'
+            id: 'new-task-form',
+            class: 'form',
+            novalidate: true
         },
         children: [
             createElement({
@@ -255,8 +259,16 @@ function createNewTaskForm() {
                             type: 'text',
                             name: 'task-title',
                             id: 'task-title',
-                            placeholder: 'Go to the gym already buddy...'
-                        }
+                            placeholder: 'Go to the gym already buddy...',
+                            maxlength: 32,
+                            required: true
+                        },
+                        events: [
+                            createEvent('blur', (event) => {
+                                const input = event.currentTarget;
+                                input.value = input.value.trim();
+                            })
+                        ]
                     }),
                     createElement({
                         tagName: 'span',
@@ -283,8 +295,15 @@ function createNewTaskForm() {
                         attributes: {
                             name: 'task-description',
                             id: 'task-description',
-                            placeholder: 'Nothing to see here for now...'
-                        }
+                            placeholder: 'Nothing to see here for now...',
+                            maxlength: 256
+                        },
+                        events: [
+                            createEvent('blur', (event) => {
+                                const input = event.currentTarget;
+                                input.value = input.value.trim();
+                            })
+                        ]
                     }),
                     createElement({
                         tagName: 'span',
@@ -311,7 +330,10 @@ function createNewTaskForm() {
                         attributes: {
                             type: 'date',
                             name: 'task-due-date',
-                            id: 'task-due-date'
+                            id: 'task-due-date',
+                            min: format(new Date(), 'yyyy-MM-dd'),
+                            value: format(new Date(), 'yyyy-MM-dd'),
+                            required: true
                         }
                     }),
                     createElement({
@@ -350,7 +372,7 @@ function createNewTaskForm() {
                             return createElement({
                                 tagName: 'option',
                                 attributes,
-                                content: priority
+                                content: toTitleCase(priority)
                             })
                         })
                     }),
@@ -380,7 +402,7 @@ function createNewTaskForm() {
                             name: 'task-project',
                             id: 'task-project'
                         },
-                        children: TodoList.getRealProjectsArray().map((project) => {
+                        children: TodoList.getProjects().map((project) => {
                             const attributes = {
                                 value: project.id
                             };
@@ -406,48 +428,26 @@ function createNewTaskForm() {
         events: [
             createEvent('submit', (event) => {
                 event.preventDefault();
-                const inputTaskTitle = event.currentTarget.elements['task-title'];
-                const taskTitle = inputTaskTitle.value.trim();
-
-                let msg = null;
-                if (!taskTitle) {
-                    msg = 'is required!';
-                } else if (taskTitle.length > 32) {
-                    msg = `should have maximum 32 characters; you entered ${taskTitle.length}!`; 
-                } else {
-                    const task = new Task(
-                        taskTitle,
-                        'Description',
-                        Task.Priority.NORMAL,
-                        new Date()
-                    );
-                    const project = TodoList.getActiveProject();
-                    project.addTask(task);
-                    const parentElement = document.querySelector('#project');
-                    const tasksContainer = parentElement.querySelector('.tasks');
-                    if (parentElement.dataset.projectId === project.id) {
-                        render(
-                            createTask({
-                                tagName: 'article',
-                                attributes: {
-                                    class: 'task',
-                                    'data-task-id': task.id
-                                }
-                            }, task),
-                            tasksContainer,
-                            tasksContainer.children.length === 1 && tasksContainer.children[0].tagName.toLowerCase() === 'p'
-                        );
-                    }
-                    const modal = event.currentTarget.closest('.modal');
-                    modal.remove();
-                }
-
-                if (msg) {
-                    const inputLabel = inputTaskTitle.previousElementSibling.textContent;
-                    const inputError = inputTaskTitle.nextElementSibling;
-                    inputError.textContent = `${inputLabel} ${msg}`;
+                const form = event.currentTarget;
+                if (!isFormValid(form)) {
                     return;
                 }
+                const newTask = new Task(
+                    form.elements['task-title'].value,
+                    form.elements['task-description'].value,
+                    new Date(form.elements['task-due-date'].value),
+                    form.elements['task-priority'].value
+                );
+                const project = TodoList.getProjectById(form.elements['task-project'].value) ?? TodoList.getDefaultProject();
+                project.addTask(newTask);
+
+                if (project.active) {
+                    const tasksContainer = document.querySelector(`#project[data-project-id="${project.id}"] .tasks`);
+                    if (tasksContainer) {
+                        render(createTask(newTask), tasksContainer);
+                    }
+                }
+                closeModal(form.closest('.modal'));
             })
         ]
     });
@@ -464,49 +464,30 @@ function createNewTaskModal() {
             createNewTaskForm()
         ],
         cardFooterChildren: [
-            createElement({
-                tagName: 'button',
-                attributes: {
+            createButton({
+                btnText: 'Cancel',
+                btnAttributes: {
                     class: 'btn'
                 },
-                children: [
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'mdi mdi-close'
-                        }
-                    }),
-                    createElement({
-                        tagName: 'span',
-                        content: 'Cancel'
-                    })
-                ],
+                iconAttributes: {
+                    class: 'mdi mdi-close'
+                },
                 events: [
                     createEvent('click', (event) => {
-                        const modal = event.currentTarget.closest('.modal');
-                        modal.remove();
+                        closeModal(event.currentTarget.closest('.modal'));
                     })
                 ]
             }),
-            createElement({
-                tagName: 'button',
-                attributes: {
-                    class: 'btn',
+            createButton({
+                btnText: 'Add Task',
+                btnAttributes: {
+                    class: 'btn btn--primary',
                     type: 'submit',
                     form: 'new-task-form'
                 },
-                children: [
-                    createElement({
-                        tagName: 'span',
-                        attributes: {
-                            class: 'mdi mdi-plus'
-                        }
-                    }),
-                    createElement({
-                        tagName: 'span',
-                        content: 'Add Task'
-                    })
-                ]
+                iconAttributes: {
+                    class: 'mdi mdi-plus'
+                }
             })
         ]
     });

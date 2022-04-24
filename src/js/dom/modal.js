@@ -1,8 +1,34 @@
-import { createElement, createEvent } from './utils';
+import { createElement, createButton, createEvent } from './utils';
 
 function createModal(options) {
     return createElement(
-        Object.assign(options, { children: [ createModalCard(options) ] })
+        Object.assign(
+            options, 
+            { 
+                children: [
+                createModalCard(options) 
+                ],
+                events: [
+                    createEvent('click', (event) => {
+                        const target = event.target;
+                        if (target.classList.contains('modal')) {
+                            closeModal(target);
+                        }
+                    }),
+                    createEvent('keydown', (event) => {
+                        if (event.key === 'Escape') {
+                            closeModal(event.currentTarget);
+                        }
+                    }),
+                    createEvent('animationend', (event) => {
+                        const modal = event.currentTarget;
+                        if (modal.classList.contains('inactive')) {
+                            modal.remove();
+                        }
+                    })
+                ]
+            }
+        )
     );
 }
 
@@ -34,30 +60,18 @@ function createModalCard({
 }
 
 function createModalCloseButton() {
-    return createElement({
-        tagName: 'button',
-        attributes: {
+    return createButton({
+        btnText: 'Close modal',
+        btnAttributes: {
             class: 'btn btn--square btn--medium btn--borderless modal-close-button'
         },
-        children: [
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'sr-only'
-                },
-                content: 'Close modal'
-            }),
-            createElement({
-                tagName: 'span',
-                attributes: {
-                    class: 'mdi mdi-close'
-                }
-            })
-        ],
+        iconAttributes: {
+            class: 'mdi mdi-close'
+        },
+        showOnlyIcon: true,
         events: [
             createEvent('click', (event) => {
-                const modal = event.currentTarget.closest('.modal');
-                modal.remove();
+                closeModal(event.currentTarget.closest('.modal'));
             })
         ]
     });
@@ -92,6 +106,25 @@ function createModalCardFooter(children) {
     });
 }
 
+function openModal(modal) {
+    document.documentElement.classList.add('clipped');
+    modal.classList.remove('inactive');
+    modal.classList.add('active');
+
+    const modalForm = modal.querySelector('form');
+    if (modalForm) {
+        modalForm.elements[0].focus();
+    }
+}
+
+function closeModal(modal) {
+    document.documentElement.classList.remove('clipped');
+    modal.classList.remove('active');
+    modal.classList.add('inactive');
+}
+
 export {
-    createModal
+    createModal,
+    openModal,
+    closeModal
 };
