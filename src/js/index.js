@@ -1,6 +1,32 @@
 import '../css/index.css';
-import { init_navigation } from './dom';
+import { render } from './dom/utils';
+import { createNavigation, createProject } from './dom';
+import TodoList from './models/todo';
 
 document.addEventListener('DOMContentLoaded', () => {
-    init_navigation('project-navigation');
+    const mainElement = document.querySelector('#main');
+
+    render(
+        createNavigation({
+            tagName: 'nav',
+            attributes: {
+                id: 'project-navigation',
+                class: 'project-navigation',
+                'data-visible': false 
+            }
+        }, TodoList.getProjects()),
+        mainElement
+    );
+
+    render(
+        createProject({
+            tagName: 'section',
+            attributes: {
+                id: 'project',
+                class: 'project',
+                'data-project-id': TodoList.getDefaultProject().id
+            }
+        }, TodoList.getDefaultProject()),
+        mainElement
+    );
 });
