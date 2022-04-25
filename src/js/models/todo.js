@@ -1,3 +1,4 @@
+import { isEqual, isAfter } from "date-fns";
 import Task from "./task";
 import Project from "./project";
 
@@ -6,18 +7,14 @@ class TodoList {
         default: {
             title: 'General',
             items: [
-                new Project('Inbox', [
-                    new Task('task 1', 'description 1', new Date(2022, 2, 26), Task.Priority.HIGH)
-                ], true, true, false),
+                new Project('Inbox', [], true, true, false),
                 new Project('Today', [], false, true, true),
                 new Project('Upcoming', [], false, true, true)
             ]
         },
         userProjects: {
             title: 'Projects',
-            items: [
-                new Project('Work')
-            ]
+            items: []
         }
     };
     
@@ -91,6 +88,18 @@ class TodoList {
             const projects = this.#projects[section].items.filter((item) => !item.dummy);
             return aggregator.concat(...projects.map((project) => project.getTasks()));
         }, []);
+    }
+
+    static getTodaysTasks() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return this.getTasks().filter((task) => isEqual(task.dueDate, today));
+    }
+
+    static getUpcomingTasks() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return this.getTasks().filter((task) => isEqual(task.dueDate, today) || isAfter(task.dueDate, today));
     }
 
     static addTask(projectId, newTask) {

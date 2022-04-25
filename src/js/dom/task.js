@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { render, createElement, createButton, createEvent } from './utils';
 import { createModal, openModal, closeModal } from './modal';
 import { createProject } from './project';
+import { changeActiveProject } from './navigation';
 import { isFormValid } from './form';
 import { toTitleCase } from '../utils';
 import Task from '../models/task';
@@ -68,8 +69,7 @@ function createTaskSummary(task) {
         ],
         events: [
             createEvent('click', (event) => {
-                const parentElement = event.currentTarget.closest('.task');
-                parentElement.classList.toggle('expanded');
+                event.currentTarget.closest('.task').classList.toggle('expanded');
             })
         ]
     });
@@ -193,7 +193,7 @@ function createTaskPriority(priority) {
                     class: 'task-priority-value'
                 },
                 content: toTitleCase(priority)
-            }),
+            })
         ]
     });
 }
@@ -219,20 +219,8 @@ function createTaskProject(project) {
                 content: project.name,
                 events: [
                     createEvent('click', (event) => {
-                        const projectId = event.currentTarget.dataset.projectId;
-        
-                        const currentActiveProject = TodoList.getActiveProject();
-                        document.querySelector(`#project-navigation [data-project-id="${currentActiveProject.id}"]`).classList.remove('active');
-                        currentActiveProject.active = false;
-        
-                        const nextActiveProject = TodoList.getProjectById(projectId) ?? TodoList.getDefaultProject();
-                        nextActiveProject.active = true;
-                        document.querySelector(`#project-navigation [data-project-id="${nextActiveProject.id}"]`).classList.add('active');
-        
-                        render(
-                            createProject(nextActiveProject), 
-                            document.querySelector('#main'),
-                            true
+                        changeActiveProject(
+                            TodoList.getProjectById(event.currentTarget.dataset.projectId)
                         );
                     }) 
                 ]
@@ -271,6 +259,7 @@ function createTaskForm(taskModel = null) {
                             placeholder: 'Go to the gym already buddy...',
                             maxlength: 32,
                             required: true,
+                            autocomplete: 'off',
                             value: taskModel ? taskModel.title : ''
                         },
                         events: [
@@ -305,7 +294,7 @@ function createTaskForm(taskModel = null) {
                         attributes: {
                             name: 'task-description',
                             id: 'task-description',
-                            placeholder: 'Nothing to see here for now...',
+                            placeholder: 'Pick the closest gym go go go go go!',
                             maxlength: 256,
                         },
                         content: taskModel ? taskModel.description : '',
@@ -449,27 +438,27 @@ function createTaskForm(taskModel = null) {
                     taskModel.dueDate = new Date(form.elements['task-due-date'].value);
                     taskModel.priority = form.elements['task-priority'].value;
 
+                    const newProjectId = form.elements['task-project'].value;
                     const parentElement = document.querySelector('#project .tasks');
                     const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
 
-                    if (taskModel.project.id !== form.elements['task-project'].value) {
+                    if (taskModel.project.id !== newProjectId) {
                         taskModel.project.removeTask(taskModel);
-                        console.log(TodoList.getProjects());
-                        const project = TodoList.getProjectById(form.elements['task-project'].value);
-                        project.addTask(taskModel);
-                        parentElement.removeChild(oldChild);
+                        TodoList.addTask(newProjectId, taskModel);
 
-                        if (parentElement.children.length === 0) {
-                            parentElement.appendChild(createElement({
-                                tagName: 'p',
-                                content: 'There are no tasks!'
-                            }));
+                        const currentActiveProject = TodoList.getActiveProject();
+                        if (taskModel.project.id !== currentActiveProject.id && !currentActiveProject.dummy) {
+                            parentElement.removeChild(oldChild);
+                            if (parentElement.children.length === 0) {
+                                parentElement.appendChild(createElement({
+                                    tagName: 'p',
+                                    content: 'There are no tasks!'
+                                }));
+                            }
+                        } else {
+                            parentElement.replaceChild(createTask(taskModel), oldChild);
                         }
-                    } else {
-                        const newChild = createTask(taskModel);
-                        parentElement.replaceChild(newChild, oldChild);
                     }
-
                 } else {
                     const newTask = new Task(
                         form.elements['task-title'].value,
@@ -477,10 +466,9 @@ function createTaskForm(taskModel = null) {
                         new Date(form.elements['task-due-date'].value),
                         form.elements['task-priority'].value
                     );
-                    const project = TodoList.getProjectById(form.elements['task-project'].value) ?? TodoList.getDefaultProject();
-                    project.addTask(newTask);
+                    TodoList.addTask(form.elements['task-project'].value, newTask);
 
-                    if (project.active) {
+                    if (newTask.project.active) {
                         const tasksContainer = document.querySelector(`#project[data-project-id="${project.id}"] .tasks`);
                         if (tasksContainer) {
                             render(
@@ -582,7 +570,6 @@ function createTaskConfirmationModal(taskModel) {
                         const parentElement = document.querySelector('#project .tasks');
                         const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
                         parentElement.removeChild(oldChild);
-
                         if (parentElement.children.length === 0) {
                             render(
                                 createElement({ tagName: 'p', content: 'There are no tasks!'}),
@@ -599,5 +586,5 @@ function createTaskConfirmationModal(taskModel) {
 
 export {
     createTask,
-    createTaskModal as createNewTaskModal 
+    createTaskModal
 };

@@ -1,5 +1,5 @@
 import { render, createElement, createEvent, createButton} from './utils';
-import { createTask, createNewTaskModal } from './task';
+import { createTask, createTaskModal } from './task';
 import { createModal, openModal, closeModal } from './modal';
 import { isFormValid } from './form';
 import { createSectionItem } from './navigation';
@@ -75,7 +75,7 @@ function createProjectAddTaskAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                const modal = createNewTaskModal();
+                const modal = createTaskModal();
                 render(modal, document.body);
                 openModal(modal);
             })
@@ -87,7 +87,7 @@ function createProjectEditAction() {
     return createButton({
         btnText: 'Edit Project',
         btnAttributes: {
-            class: 'btn btn--square btn--medium new-project-modal-open'
+            class: 'btn btn--square btn--medium edit-project-modal-open'
         },
         iconAttributes: {
             class: 'mdi mdi-square-edit-outline'
@@ -95,8 +95,9 @@ function createProjectEditAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                const projectModel = TodoList.getActiveProject();
-                const modal = createProjectModal(projectModel)
+                const modal = createProjectModal(
+                    TodoList.getActiveProject()
+                );
                 render(modal, document.body);
                 openModal(modal);
             })
@@ -200,13 +201,19 @@ function createProjectForm(projectModel = null) {
                 }
 
                 if (projectModel) {
-                    projectModel.name = form.elements['project-name'].value;
-                    document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).textContent = projectModel.name;
-                    render(
-                        createProject(projectModel), 
-                        document.querySelector('#main'),
-                        true
-                    );
+                    const newProjectName = form.elements['project-name'].value;
+                    if (projectModel.name !== newProjectName) {
+                        projectModel.name = form.elements['project-name'].value;
+                        const parentElement = document.querySelector('#user-projects .navigation-section-items');
+                        const oldChild = document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`);
+                        const newChild = createSectionItem(projectModel);
+                        parentElement.replaceChild(newChild, oldChild);
+                        render(
+                            createProject(projectModel), 
+                            document.querySelector('#main'),
+                            true
+                        );
+                    }
                 } else {
                     const newProject = new Project(
                         form.elements['project-name'].value
@@ -309,9 +316,8 @@ function createProjectConfirmationModal(projectModel) {
                         const defaultProject = TodoList.getDefaultProject();
 
                         projectModel.active = false;
-                        defaultProject.active = true;
-
                         document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).remove();
+
                         const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
                         if (userProjectsContainer.children.length === 0) {
                             render(
@@ -320,13 +326,17 @@ function createProjectConfirmationModal(projectModel) {
                             );
                         }
 
+                        defaultProject.active = true;
                         document.querySelector(`#project-navigation [data-project-id="${defaultProject.id}"]`).classList.add('active');
+
                         render(
                             createProject(defaultProject), 
                             document.querySelector('#main'),
                             true
                         );
+
                         TodoList.removeProject(projectModel);
+
                         closeModal(event.currentTarget.closest('.modal'));
                     })
                 ]
@@ -337,5 +347,5 @@ function createProjectConfirmationModal(projectModel) {
 
 export {
     createProject,
-    createProjectModal as createNewProjectModal
+    createProjectModal
 };

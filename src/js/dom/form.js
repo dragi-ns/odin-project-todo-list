@@ -27,8 +27,6 @@ function displayInputError(input) {
         msg = `should have maximum ${input.maxLength} characters; you entered ${input.value.length}`;
     } else if (input.validity.rangeOverflow) {
         msg = `should be less than or equal to ${input.max}; you entered ${input.value}`;
-    } else if (input.validity.rangeUnderflow) {
-        msg = `should be greater than or equal to ${input.min}; you entered ${input.value}`;
     } else {
         msg = 'is invalid';
     }

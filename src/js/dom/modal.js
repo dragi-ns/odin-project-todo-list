@@ -61,7 +61,7 @@ function createModalCard({
 
 function createModalCloseButton() {
     return createButton({
-        btnText: 'Close modal',
+        btnText: 'Close Modal',
         btnAttributes: {
             class: 'btn btn--square btn--medium btn--borderless modal-close-button'
         },

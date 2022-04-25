@@ -1,8 +1,10 @@
 import { isEqual, isAfter } from 'date-fns';
 import { createButton, createElement, createEvent, render } from './utils';
-import { createProject, createNewProjectModal } from './project';
+import { createProject, createProjectModal } from './project';
 import { openModal } from './modal';
 import TodoList from '../models/todo.js';
+
+
 
 function createNavigation(sections) {
     const navigationContainer = createElement({
@@ -80,7 +82,7 @@ function createSectionHeaderAction() {
                 showOnlyIcon: true,
                 events: [
                     createEvent('click', () => {
-                        const modal = createNewProjectModal();
+                        const modal = createProjectModal();
                         render(modal, document.body);
                         openModal(modal);
                     })
@@ -90,15 +92,15 @@ function createSectionHeaderAction() {
     });
 }
 
-function createSectionItems(items) {
+function createSectionItems(projectModels) {
     const children = [];
-    if (items.length === 0) {
+    if (projectModels.length === 0) {
         children.push(createElement({
             tagName: 'p',
             content: 'There are no projects!'
         }));
     } else {
-        children.push(...items.map((item) => createSectionItem(item)));
+        children.push(...projectModels.map((projectModel) => createSectionItem(projectModel)));
     }
     return createElement({
         attributes: {
@@ -108,70 +110,84 @@ function createSectionItems(items) {
     });
 }
 
-function createSectionItem(item) {
+function createSectionItem(projectModel) {
     return createElement({
-        tagName: 'button',
+        tagName: 'baddTaskutton',
         attributes: {
-            class: 'navigation-section-item btn' + (item.active ? ' active' : ''),
-            'data-project-id': item.id
+            class: 'navigation-section-item btn' + (projectModel.active ? ' active' : ''),
+            'data-project-id': projectModel.id
         },
-        content: item.name,
+        content: projectModel.name,
         events: [
-            createEvent('click', (event) => {
-                const projectId = event.currentTarget.dataset.projectId;
-                const currentActiveProject = TodoList.getActiveProject();
-
-                if (projectId === currentActiveProject.id) {
-                    return;
-                }
-
-                document.querySelector(`#project-navigation [data-project-id="${currentActiveProject.id}"]`).classList.remove('active');
-                currentActiveProject.active = false;
-
-                const nextActiveProject = TodoList.getProjectById(projectId) ?? TodoList.getDefaultProject();
-                nextActiveProject.active = true;
-                document.querySelector(`#project-navigation [data-project-id="${nextActiveProject.id}"]`).classList.add('active');
-
-                if (nextActiveProject.dummy) {
-                    if (nextActiveProject.name === 'Today') {
-                        let tasks = TodoList.getTasks();
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        tasks = tasks.filter((task) => isEqual(task.dueDate, today));
-                        nextActiveProject.addTasks(tasks, false);
-                    } else if (nextActiveProject.name === 'Upcoming') {
-                        let tasks = TodoList.getTasks();
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        tasks = tasks.filter((task) => isEqual(task.dueDate, today) || isAfter(task.dueDate, today));
-                        nextActiveProject.addTasks(tasks, false);
+            createEvent('click', () => {
+                if (projectModel.dummy) {
+                    if (projectModel.name === 'Today') {
+                        projectModel.addTasks(TodoList.getTodaysTasks(), false);
+                    } else if (projectModel.name === 'Upcoming') {
+                        projectModel.addTasks(TodoList.getUpcomingTasks(), false);
                     }
                 }
-
-                render(
-                    createProject(nextActiveProject), 
-                    document.querySelector('#main'),
-                    true
-                );
+                changeActiveProject(projectModel);
             })
         ]
     });
+}
+
+function changeActiveProject(projectModel) {
+    const currentActiveProjectModel = TodoList.getActiveProject();
+    if (projectModel.id === currentActiveProjectModel.id) {
+        return;
+    }
+
+    const currentActiveButton = document.querySelector(`#project-navigation [data-project-id="${currentActiveProjectModel.id}"]`);
+    if (currentActiveButton) {
+        currentActiveButton.classList.remove('active');
+    }
+    currentActiveProjectModel.active = false;
+
+    const nextActiveButton = document.querySelector(`#project-navigation [data-project-id="${projectModel.id}"]`);
+    if (nextActiveButton) {
+        nextActiveButton.classList.add('active');
+    }
+    projectModel.active = true;
+
+    render(
+        createProject(projectModel), 
+        document.querySelector('#main'),
+        true
+    );
 }
 
 function initialize_navigation_toggle(navigation) {
     const navigationToggle = document.querySelector(`[aria-controls="${navigation.getAttribute('id')}"]`);
     navigationToggle.addEventListener('click', () => {
         if (navigation.dataset.visible === 'true') {
-            navigation.dataset.visible = 'false';
-            navigationToggle.setAttribute('aria-expanded', false);
+            closeNavigation()    
         } else {
-            navigation.dataset.visible = 'true';
-            navigationToggle.setAttribute('aria-expanded', true);
+            openNavigation(); 
+        }
+    });
+
+    function openNavigation() {
+        navigation.dataset.visible = 'true';
+        navigationToggle.setAttribute('aria-expanded', true);
+    }
+
+    function closeNavigation() {
+        navigation.dataset.visible = 'false';
+        navigationToggle.setAttribute('aria-expanded', false);
+    }
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target !== navigationToggle && target.closest('#project-navigation') === null && navigation.dataset.visible === 'true') {
+            closeNavigation()
         }
     });
 }
 
 export {
     createNavigation,
-    createSectionItem
+    createSectionItem,
+    changeActiveProject
 };
