@@ -469,7 +469,7 @@ function createTaskForm(taskModel = null) {
                     TodoList.addTask(form.elements['task-project'].value, newTask);
 
                     if (newTask.project.active) {
-                        const tasksContainer = document.querySelector(`#project[data-project-id="${project.id}"] .tasks`);
+                        const tasksContainer = document.querySelector(`#project[data-project-id="${newTask.project.id}"] .tasks`);
                         if (tasksContainer) {
                             render(
                                 createTask(newTask),
