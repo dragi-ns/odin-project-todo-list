@@ -25,18 +25,25 @@ class Project {
         return this.#tasks.slice(0);
     }
 
-    addTask(newTask) {
+    addTask(newTask, reference = true) {
         const task = this.getTask(newTask.id);
         if (!task) {
             this.#tasks.push(newTask);
-            newTask.project = this;
+            if (reference) {
+                newTask.project = this;
+            }
         }
         return newTask;
     }
 
-    addTasks(newTasks) {
-        newTasks.forEach(this.addTask, this);
+    addTasks(newTasks, reference = true) {
+        newTasks.forEach((task) => this.addTask(task, reference));
         return newTasks;
+    }
+
+    removeTask(oldTask) {
+        this.#tasks = this.#tasks.filter((task) => task.id !== oldTask.id);
+        oldTask.project = null;
     }
 }
 

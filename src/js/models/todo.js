@@ -7,7 +7,7 @@ class TodoList {
             title: 'General',
             items: [
                 new Project('Inbox', [
-                    new Task('task 1', 'description 1', new Date(), Task.Priority.HIGH)
+                    new Task('task 1', 'description 1', new Date(2022, 2, 26), Task.Priority.HIGH)
                 ], true, true, false),
                 new Project('Today', [], false, true, true),
                 new Project('Upcoming', [], false, true, true)
@@ -15,7 +15,9 @@ class TodoList {
         },
         userProjects: {
             title: 'Projects',
-            items: []
+            items: [
+                new Project('Work')
+            ]
         }
     };
     
@@ -67,6 +69,11 @@ class TodoList {
         return newProjects;
     }
 
+    static removeProject(project) {
+        this.#projects.userProjects.items = this.#projects.userProjects.items.filter((item) => item.id === project.id);
+        return project;
+    }
+
     static getTask(taskId) {
         for (const section in this.#projects) {
             for (const project of this.#projects[section].items) {
@@ -77,6 +84,13 @@ class TodoList {
             }
         }
         return undefined;
+    }
+
+    static getTasks() {
+        return Object.keys(this.#projects).reduce((aggregator, section) => {
+            const projects = this.#projects[section].items.filter((item) => !item.dummy);
+            return aggregator.concat(...projects.map((project) => project.getTasks()));
+        }, []);
     }
 
     static addTask(projectId, newTask) {

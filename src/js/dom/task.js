@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { render, createElement, createButton, createEvent } from './utils';
-import { createModal, closeModal } from './modal';
+import { createModal, openModal, closeModal } from './modal';
 import { createProject } from './project';
 import { isFormValid } from './form';
 import { toTitleCase } from '../utils';
@@ -119,7 +119,12 @@ function createTaskEditAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', (event) => {
-                console.log('edit task');
+                const taskModel = TodoList.getTask(
+                    event.currentTarget.closest('.task').dataset.taskId
+                );
+                const modal = createTaskModal(taskModel);
+                render(modal, document.body);
+                openModal(modal);
             })
         ]
     });
@@ -137,7 +142,12 @@ function createTaskDeleteAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', (event) => {
-                console.log('delete task');
+                const taskModel = TodoList.getTask(
+                    event.currentTarget.closest('.task').dataset.taskId
+                );
+                const modal = createTaskConfirmationModal(taskModel); 
+                render(modal, document.body);
+                openModal(modal);
             })
         ]
     });
@@ -231,11 +241,11 @@ function createTaskProject(project) {
     });
 }
 
-function createNewTaskForm() {
+function createTaskForm(taskModel = null) {
     return createElement({
         tagName: 'form',
         attributes: {
-            id: 'new-task-form',
+            id: 'task-form',
             class: 'form',
             novalidate: true
         },
@@ -260,7 +270,8 @@ function createNewTaskForm() {
                             id: 'task-title',
                             placeholder: 'Go to the gym already buddy...',
                             maxlength: 32,
-                            required: true
+                            required: true,
+                            value: taskModel ? taskModel.title : ''
                         },
                         events: [
                             createEvent('blur', (event) => {
@@ -295,8 +306,9 @@ function createNewTaskForm() {
                             name: 'task-description',
                             id: 'task-description',
                             placeholder: 'Nothing to see here for now...',
-                            maxlength: 256
+                            maxlength: 256,
                         },
+                        content: taskModel ? taskModel.description : '',
                         events: [
                             createEvent('blur', (event) => {
                                 const input = event.currentTarget;
@@ -331,7 +343,7 @@ function createNewTaskForm() {
                             name: 'task-due-date',
                             id: 'task-due-date',
                             min: format(new Date(), 'yyyy-MM-dd'),
-                            value: format(new Date(), 'yyyy-MM-dd'),
+                            value: taskModel ? format(taskModel.dueDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
                             required: true
                         }
                     }),
@@ -365,7 +377,7 @@ function createNewTaskForm() {
                             const attributes = {
                                 value: priority
                             };
-                            if (index === 0) {
+                            if (taskModel && taskModel.priority === priority || taskModel === null && index === 0) {
                                 attributes.selected = true;
                             }
                             return createElement({
@@ -405,7 +417,7 @@ function createNewTaskForm() {
                             const attributes = {
                                 value: project.id
                             };
-                            if (project.active) {
+                            if (taskModel && taskModel.project.id === project.id || taskModel === null && project.active) {
                                 attributes.selected = true
                             }
                             return createElement({
@@ -431,19 +443,52 @@ function createNewTaskForm() {
                 if (!isFormValid(form)) {
                     return;
                 }
-                const newTask = new Task(
-                    form.elements['task-title'].value,
-                    form.elements['task-description'].value,
-                    new Date(form.elements['task-due-date'].value),
-                    form.elements['task-priority'].value
-                );
-                const project = TodoList.getProjectById(form.elements['task-project'].value) ?? TodoList.getDefaultProject();
-                project.addTask(newTask);
+                if (taskModel) {
+                    taskModel.title = form.elements['task-title'].value;
+                    taskModel.description = form.elements['task-description'].value;
+                    taskModel.dueDate = new Date(form.elements['task-due-date'].value);
+                    taskModel.priority = form.elements['task-priority'].value;
 
-                if (project.active) {
-                    const tasksContainer = document.querySelector(`#project[data-project-id="${project.id}"] .tasks`);
-                    if (tasksContainer) {
-                        render(createTask(newTask), tasksContainer);
+                    const parentElement = document.querySelector('#project .tasks');
+                    const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
+
+                    if (taskModel.project.id !== form.elements['task-project'].value) {
+                        taskModel.project.removeTask(taskModel);
+                        console.log(TodoList.getProjects());
+                        const project = TodoList.getProjectById(form.elements['task-project'].value);
+                        project.addTask(taskModel);
+                        parentElement.removeChild(oldChild);
+
+                        if (parentElement.children.length === 0) {
+                            parentElement.appendChild(createElement({
+                                tagName: 'p',
+                                content: 'There are no tasks!'
+                            }));
+                        }
+                    } else {
+                        const newChild = createTask(taskModel);
+                        parentElement.replaceChild(newChild, oldChild);
+                    }
+
+                } else {
+                    const newTask = new Task(
+                        form.elements['task-title'].value,
+                        form.elements['task-description'].value,
+                        new Date(form.elements['task-due-date'].value),
+                        form.elements['task-priority'].value
+                    );
+                    const project = TodoList.getProjectById(form.elements['task-project'].value) ?? TodoList.getDefaultProject();
+                    project.addTask(newTask);
+
+                    if (project.active) {
+                        const tasksContainer = document.querySelector(`#project[data-project-id="${project.id}"] .tasks`);
+                        if (tasksContainer) {
+                            render(
+                                createTask(newTask),
+                                tasksContainer,
+                                tasksContainer.children.length === 1 && tasksContainer.children[0].tagName.toLowerCase() === 'p'
+                            );
+                        }
                     }
                 }
                 closeModal(form.closest('.modal'));
@@ -452,15 +497,15 @@ function createNewTaskForm() {
     });
 }
 
-function createNewTaskModal() {
+function createTaskModal(taskModel = null) {
     return createModal({
         attributes: {
-            id: 'new-task-modal',
+            id: 'task-modal',
             class: 'modal'
         },
-        title: 'New Task',
+        title: taskModel ? 'Edit Task' : 'New Task',
         cardBodyChildren: [
-            createNewTaskForm()
+            createTaskForm(taskModel)
         ],
         cardFooterChildren: [
             createButton({
@@ -478,11 +523,11 @@ function createNewTaskModal() {
                 ]
             }),
             createButton({
-                btnText: 'Add Task',
+                btnText: taskModel ? 'Save Changes' : 'Add Task',
                 btnAttributes: {
                     class: 'btn btn--primary',
                     type: 'submit',
-                    form: 'new-task-form'
+                    form: 'task-form'
                 },
                 iconAttributes: {
                     class: 'mdi mdi-plus'
@@ -492,7 +537,67 @@ function createNewTaskModal() {
     });
 }
 
+function createTaskConfirmationModal(taskModel) {
+    return createModal({
+        attributes: {
+            id: 'task-confirmation-modal',
+            class: 'modal'
+        },
+        title: 'Confirmation',
+        cardBodyChildren: [
+            createElement({
+                tagName: 'p',
+                content: `Are you sure you want to delete "${taskModel.title}" task?`
+            })
+        ],
+        cardFooterChildren: [
+            createButton({
+                btnText: 'Cancel',
+                btnAttributes: {
+                    class: 'btn'
+                },
+                iconAttributes: {
+                    class: 'mdi mdi-close'
+                },
+                events: [
+                    createEvent('click', (event) => {
+                        closeModal(event.currentTarget.closest('.modal'));
+                    })
+                ]
+            }),
+            createButton({
+                btnText: 'Delete',
+                btnAttributes: {
+                    class: 'btn btn--primary',
+                    type: 'submit',
+                    form: 'project-form'
+                },
+                iconAttributes: {
+                    class: 'mdi mdi-delete'
+                },
+                events: [
+                    createEvent('click', (event) => {
+                        taskModel.project.removeTask(taskModel);
+
+                        const parentElement = document.querySelector('#project .tasks');
+                        const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
+                        parentElement.removeChild(oldChild);
+
+                        if (parentElement.children.length === 0) {
+                            render(
+                                createElement({ tagName: 'p', content: 'There are no tasks!'}),
+                                parentElement 
+                            );
+                        }
+                        closeModal(event.currentTarget.closest('.modal'));
+                    })
+                ]
+            })
+        ]
+    });
+}
+
 export {
     createTask,
-    createNewTaskModal 
+    createTaskModal as createNewTaskModal 
 };

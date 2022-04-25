@@ -95,7 +95,10 @@ function createProjectEditAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                console.log('open edit project modal');
+                const projectModel = TodoList.getActiveProject();
+                const modal = createProjectModal(projectModel)
+                render(modal, document.body);
+                openModal(modal);
             })
         ]
     });
@@ -113,26 +116,37 @@ function createProjectDeleteAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                console.log('open delete project modal');
+                const modal = createProjectConfirmationModal(TodoList.getActiveProject());
+                render(modal, document.body);
+                openModal(modal);
             })
         ]
     });
 }
 
 function createProjectTasks(tasks) {
+    const children = [];
+    if (tasks.length === 0) {
+        children.push(createElement({
+            tagName: 'p',
+            content: 'There are no tasks!'
+        }));
+    } else {
+        children.push(...tasks.map((task) => createTask(task)));
+    }
     return createElement({
         attributes: {
             class: 'tasks'
         },
-        children: tasks.map((task) => createTask(task))
+        children
     });
 }
 
-function createNewProjectForm() {
+function createProjectForm(projectModel = null) {
     return createElement({
         tagName: 'form',
         attributes: {
-            id: 'new-project-form',
+            id: 'project-form',
             class: 'form',
             novalidate: true
         },
@@ -158,7 +172,8 @@ function createNewProjectForm() {
                             placeholder: 'Work',
                             maxlength: 16,
                             autocomplete: 'off',
-                            required: true
+                            required: true,
+                            value: projectModel ? projectModel.name : ''
                         },
                         events: [
                             createEvent('blur', (event) => {
@@ -183,31 +198,43 @@ function createNewProjectForm() {
                 if (!isFormValid(form)) {
                     return;
                 }
-                const newProject = new Project(
-                    form.elements['project-name'].value
-                );
-                TodoList.addProject(newProject);
-                const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
-                render(
-                    createSectionItem(newProject),
-                    userProjectsContainer,
-                    userProjectsContainer.children.length === 1 && userProjectsContainer.children[0].tagName.toLowerCase() === 'p'
-                );
+
+                if (projectModel) {
+                    projectModel.name = form.elements['project-name'].value;
+                    document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).textContent = projectModel.name;
+                    render(
+                        createProject(projectModel), 
+                        document.querySelector('#main'),
+                        true
+                    );
+                } else {
+                    const newProject = new Project(
+                        form.elements['project-name'].value
+                    );
+                    TodoList.addProject(newProject);
+                    const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
+                    render(
+                        createSectionItem(newProject),
+                        userProjectsContainer,
+                        userProjectsContainer.children.length === 1 && userProjectsContainer.children[0].tagName.toLowerCase() === 'p'
+                    );
+                }
+
                 closeModal(form.closest('.modal'));
             })
         ]
     });
 }
 
-function createNewProjectModal() {
+function createProjectModal(projectModel = null) {
     return createModal({
         attributes: {
-            id: 'new-project-modal',
+            id: 'project-modal',
             class: 'modal'
         },
-        title: 'New Project',
+        title: projectModel ? 'Edit Project' : 'New Project',
         cardBodyChildren: [
-            createNewProjectForm()
+            createProjectForm(projectModel)
         ],
         cardFooterChildren: [
             createButton({
@@ -225,11 +252,11 @@ function createNewProjectModal() {
                 ]
             }),
             createButton({
-                btnText: 'Add Project',
+                btnText: projectModel ? 'Save Changes' : 'Add Project',
                 btnAttributes: {
                     class: 'btn btn--primary',
                     type: 'submit',
-                    form: 'new-project-form'
+                    form: 'project-form'
                 },
                 iconAttributes: {
                     class: 'mdi mdi-plus'
@@ -239,7 +266,76 @@ function createNewProjectModal() {
     });
 }
 
+function createProjectConfirmationModal(projectModel) {
+    return createModal({
+        attributes: {
+            id: 'project-confirmation-modal',
+            class: 'modal'
+        },
+        title: 'Confirmation',
+        cardBodyChildren: [
+            createElement({
+                tagName: 'p',
+                content: `Are you sure you want to delete "${projectModel.name}" project and it's tasks?`
+            })
+        ],
+        cardFooterChildren: [
+            createButton({
+                btnText: 'Cancel',
+                btnAttributes: {
+                    class: 'btn'
+                },
+                iconAttributes: {
+                    class: 'mdi mdi-close'
+                },
+                events: [
+                    createEvent('click', (event) => {
+                        closeModal(event.currentTarget.closest('.modal'));
+                    })
+                ]
+            }),
+            createButton({
+                btnText: 'Delete',
+                btnAttributes: {
+                    class: 'btn btn--primary',
+                    type: 'submit',
+                    form: 'project-form'
+                },
+                iconAttributes: {
+                    class: 'mdi mdi-delete'
+                },
+                events: [
+                    createEvent('click', (event) => {
+                        const defaultProject = TodoList.getDefaultProject();
+
+                        projectModel.active = false;
+                        defaultProject.active = true;
+
+                        document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).remove();
+                        const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
+                        if (userProjectsContainer.children.length === 0) {
+                            render(
+                                createElement({ tagName: 'p', content: 'There are no projects!'}),
+                                userProjectsContainer
+                            );
+                        }
+
+                        document.querySelector(`#project-navigation [data-project-id="${defaultProject.id}"]`).classList.add('active');
+                        render(
+                            createProject(defaultProject), 
+                            document.querySelector('#main'),
+                            true
+                        );
+                        TodoList.removeProject(projectModel);
+                        closeModal(event.currentTarget.closest('.modal'));
+                    })
+                ]
+            })
+        ]
+    });
+}
+
 export {
     createProject,
-    createNewProjectModal
+    createProjectModal as createNewProjectModal
 };

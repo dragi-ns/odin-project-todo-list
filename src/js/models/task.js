@@ -15,6 +15,7 @@ class Task {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
+        this.dueDate.setHours(0, 0, 0, 0);
         this.priority = priority;
         this.completed = completed;
         this.project = null;

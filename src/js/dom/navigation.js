@@ -1,3 +1,4 @@
+import { isEqual, isAfter } from 'date-fns';
 import { createButton, createElement, createEvent, render } from './utils';
 import { createProject, createNewProjectModal } from './project';
 import { openModal } from './modal';
@@ -118,14 +119,34 @@ function createSectionItem(item) {
         events: [
             createEvent('click', (event) => {
                 const projectId = event.currentTarget.dataset.projectId;
-
                 const currentActiveProject = TodoList.getActiveProject();
+
+                if (projectId === currentActiveProject.id) {
+                    return;
+                }
+
                 document.querySelector(`#project-navigation [data-project-id="${currentActiveProject.id}"]`).classList.remove('active');
                 currentActiveProject.active = false;
 
                 const nextActiveProject = TodoList.getProjectById(projectId) ?? TodoList.getDefaultProject();
                 nextActiveProject.active = true;
                 document.querySelector(`#project-navigation [data-project-id="${nextActiveProject.id}"]`).classList.add('active');
+
+                if (nextActiveProject.dummy) {
+                    if (nextActiveProject.name === 'Today') {
+                        let tasks = TodoList.getTasks();
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        tasks = tasks.filter((task) => isEqual(task.dueDate, today));
+                        nextActiveProject.addTasks(tasks, false);
+                    } else if (nextActiveProject.name === 'Upcoming') {
+                        let tasks = TodoList.getTasks();
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        tasks = tasks.filter((task) => isEqual(task.dueDate, today) || isAfter(task.dueDate, today));
+                        nextActiveProject.addTasks(tasks, false);
+                    }
+                }
 
                 render(
                     createProject(nextActiveProject), 
