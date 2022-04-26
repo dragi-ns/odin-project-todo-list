@@ -41,9 +41,18 @@ class Project {
         return newTasks;
     }
 
-    removeTask(oldTask) {
+    removeTask(oldTask, dereference = true) {
         this.#tasks = this.#tasks.filter((task) => task.id !== oldTask.id);
-        oldTask.project = null;
+        if (dereference) {
+            oldTask.project = null;
+        }
+    }
+
+    removeTasks(dereference = true) {
+        if (dereference) {
+            this.#tasks.forEach((task) => task.project = null);
+        }
+        this.#tasks = [];
     }
 }
 

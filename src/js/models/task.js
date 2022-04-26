@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 class Task {
     #id;
+    #dueDate;
 
     static Priority = Object.freeze({
         NORMAL: 'normal',
@@ -15,7 +16,6 @@ class Task {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
-        this.dueDate.setHours(0, 0, 0, 0);
         this.priority = priority;
         this.completed = completed;
         this.project = null;
@@ -23,6 +23,15 @@ class Task {
 
     get id() {
         return this.#id;
+    }
+
+    get dueDate() {
+        return this.#dueDate;
+    }
+
+    set dueDate(newDate) {
+        this.#dueDate = newDate;
+        this.#dueDate.setHours(0, 0, 0, 0);
     }
 
     toggleCompleted() {

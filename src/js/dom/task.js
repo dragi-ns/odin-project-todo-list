@@ -1,7 +1,6 @@
 import { format } from 'date-fns';
 import { render, createElement, createButton, createEvent } from './utils';
 import { createModal, openModal, closeModal } from './modal';
-import { createProject } from './project';
 import { changeActiveProject } from './navigation';
 import { isFormValid } from './form';
 import { toTitleCase } from '../utils';
@@ -443,11 +442,11 @@ function createTaskForm(taskModel = null) {
                     const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
 
                     if (taskModel.project.id !== newProjectId) {
-                        taskModel.project.removeTask(taskModel);
+                        TodoList.removeTask(taskModel.project.id, taskModel);
                         TodoList.addTask(newProjectId, taskModel);
 
                         const currentActiveProject = TodoList.getActiveProject();
-                        if (taskModel.project.id !== currentActiveProject.id && !currentActiveProject.dummy) {
+                        if (!currentActiveProject.dummy && taskModel.project.id !== currentActiveProject.id) {
                             parentElement.removeChild(oldChild);
                             if (parentElement.children.length === 0) {
                                 parentElement.appendChild(createElement({
@@ -455,9 +454,9 @@ function createTaskForm(taskModel = null) {
                                     content: 'There are no tasks!'
                                 }));
                             }
-                        } else {
-                            parentElement.replaceChild(createTask(taskModel), oldChild);
                         }
+                    } else {
+                        parentElement.replaceChild(createTask(taskModel), oldChild);
                     }
                 } else {
                     const newTask = new Task(
@@ -565,7 +564,7 @@ function createTaskConfirmationModal(taskModel) {
                 },
                 events: [
                     createEvent('click', (event) => {
-                        taskModel.project.removeTask(taskModel);
+                        TodoList.removeTask(taskModel.project.id, taskModel);
 
                         const parentElement = document.querySelector('#project .tasks');
                         const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);

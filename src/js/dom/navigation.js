@@ -121,6 +121,7 @@ function createSectionItem(projectModel) {
         events: [
             createEvent('click', () => {
                 if (projectModel.dummy) {
+                    projectModel.removeTasks(false);
                     if (projectModel.name === 'Today') {
                         projectModel.addTasks(TodoList.getTodaysTasks(), false);
                     } else if (projectModel.name === 'Upcoming') {

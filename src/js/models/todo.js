@@ -67,7 +67,7 @@ class TodoList {
     }
 
     static removeProject(project) {
-        this.#projects.userProjects.items = this.#projects.userProjects.items.filter((item) => item.id === project.id);
+        this.#projects.userProjects.items = this.#projects.userProjects.items.filter((item) => item.id !== project.id);
         return project;
     }
 
@@ -112,6 +112,12 @@ class TodoList {
         const project = this.getProjectById(projectId) ?? this.getDefaultProject();
         project.addTasks(newTasks);
         return newTasks;
+    }
+
+    static removeTask(projectId, oldTask) {
+        const project = this.getProjectById(projectId) ?? this.getDefaultProject();     
+        project.removeTask(oldTask);
+        return oldTask;
     }
 }
 
