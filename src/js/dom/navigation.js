@@ -144,13 +144,13 @@ function changeActiveProject(projectModel) {
     if (currentActiveButton) {
         currentActiveButton.classList.remove('active');
     }
-    currentActiveProjectModel.active = false;
 
     const nextActiveButton = document.querySelector(`#project-navigation [data-project-id="${projectModel.id}"]`);
     if (nextActiveButton) {
         nextActiveButton.classList.add('active');
     }
-    projectModel.active = true;
+
+    TodoList.changeActiveProject(projectModel);
 
     render(
         createProject(projectModel), 

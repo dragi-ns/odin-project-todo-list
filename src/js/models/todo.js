@@ -1,22 +1,8 @@
 import { isEqual, isAfter } from "date-fns";
-import Task from "./task";
-import Project from "./project";
+import Storage from "./storage";
 
 class TodoList {
-    static #projects = {
-        default: {
-            title: 'General',
-            items: [
-                new Project('Inbox', [], true, true, false),
-                new Project('Today', [], false, true, true),
-                new Project('Upcoming', [], false, true, true)
-            ]
-        },
-        userProjects: {
-            title: 'Projects',
-            items: []
-        }
-    };
+    static #projects = Storage.loadProjects();
     
     static getProjectById(projectId) {
         for (const section in this.#projects) {
@@ -57,6 +43,7 @@ class TodoList {
         const project = this.getProjectById(newProject.id);
         if (!project) {
             this.#projects.userProjects.items.push(newProject);
+            Storage.saveProjects(this.#projects);
         }
         return newProject;
     }
@@ -66,8 +53,19 @@ class TodoList {
         return newProjects;
     }
 
+    static updateProject(projectId, data) {
+        const project = TodoList.getProjectById(projectId);
+        if (!project) {
+            return false;
+        }
+        project.update(data);
+        Storage.saveProjects(this.#projects);
+        return project;
+    }
+
     static removeProject(project) {
         this.#projects.userProjects.items = this.#projects.userProjects.items.filter((item) => item.id !== project.id);
+        Storage.saveProjects(this.#projects);
         return project;
     }
 
@@ -105,6 +103,7 @@ class TodoList {
     static addTask(projectId, newTask) {
         const project = this.getProjectById(projectId) ?? this.getDefaultProject();
         project.addTask(newTask);
+        Storage.saveProjects(this.#projects);
         return project;
     }
 
@@ -114,10 +113,38 @@ class TodoList {
         return newTasks;
     }
 
+    static updateTask(taskId, data) {
+        const task = this.getTask(taskId);
+        if (!task) {
+            return false;
+        }
+        task.update(data);
+        Storage.saveProjects(this.#projects);
+        return task;
+    }
+
     static removeTask(projectId, oldTask) {
         const project = this.getProjectById(projectId) ?? this.getDefaultProject();     
         project.removeTask(oldTask);
+        Storage.saveProjects(this.#projects);
         return oldTask;
+    }
+
+    static toggleCompleted(taskId) {
+        const task = this.getTask(taskId);
+        if (!task) {
+            return false;
+        }
+        const completed = task.toggleCompleted();
+        Storage.saveProjects(this.#projects);
+        return completed;
+    }
+
+    static changeActiveProject(newActiveProject) {
+        const currentActiveProject = this.getActiveProject();
+        currentActiveProject.active = false;
+        newActiveProject.active = true;
+        Storage.saveProjects(this.#projects);
     }
 }
 

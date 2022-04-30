@@ -201,9 +201,11 @@ function createProjectForm(projectModel = null) {
                 }
 
                 if (projectModel) {
-                    const newProjectName = form.elements['project-name'].value;
-                    if (projectModel.name !== newProjectName) {
-                        projectModel.name = form.elements['project-name'].value;
+                    const oldProjectName = projectModel.name;
+                    TodoList.updateProject(projectModel.id, {
+                        name: form.elements['project-name'].value
+                    });
+                    if (projectModel.name !== oldProjectName) {
                         const parentElement = document.querySelector('#user-projects .navigation-section-items');
                         const oldChild = document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`);
                         const newChild = createSectionItem(projectModel);
@@ -315,7 +317,6 @@ function createProjectConfirmationModal(projectModel) {
                     createEvent('click', (event) => {
                         const defaultProject = TodoList.getDefaultProject();
 
-                        projectModel.active = false;
                         document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).remove();
 
                         const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
@@ -326,7 +327,6 @@ function createProjectConfirmationModal(projectModel) {
                             );
                         }
 
-                        defaultProject.active = true;
                         document.querySelector(`#project-navigation [data-project-id="${defaultProject.id}"]`).classList.add('active');
 
                         render(
@@ -335,6 +335,7 @@ function createProjectConfirmationModal(projectModel) {
                             true
                         );
 
+                        TodoList.changeActiveProject(defaultProject);
                         TodoList.removeProject(projectModel);
 
                         closeModal(event.currentTarget.closest('.modal'));

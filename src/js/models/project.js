@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import Task from './task';
 
 class Project {
     #id;
@@ -15,6 +16,11 @@ class Project {
 
     get id() {
         return this.#id;
+    }
+
+    update(data) {
+        this.name = data.name;
+        return this;
     }
 
     getTask(taskId) {
@@ -53,6 +59,26 @@ class Project {
             this.#tasks.forEach((task) => task.project = null);
         }
         this.#tasks = [];
+    }
+
+    toJSON() {
+        return {
+            name: this.name,
+            active: this.active,
+            perserve: this.perserve,
+            dummy: this.dummy,
+            tasks: this.#tasks
+        };
+    }
+
+    static fromJSON(data) {
+        return new Project(
+            data.name,
+            data.tasks.map((task) => Task.fromJSON(task)),
+            data.active,
+            data.perserve,
+            data.dummy
+        );
     }
 }
 
