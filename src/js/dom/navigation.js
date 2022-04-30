@@ -157,34 +157,39 @@ function changeActiveProject(projectModel) {
         document.querySelector('#main'),
         true
     );
+
+    closeNavigation(
+        document.querySelector('#project-navigation'),
+        document.querySelector('[aria-controls="project-navigation"]')
+    );
 }
 
 function initialize_navigation_toggle(navigation) {
     const navigationToggle = document.querySelector(`[aria-controls="${navigation.getAttribute('id')}"]`);
     navigationToggle.addEventListener('click', () => {
         if (navigation.dataset.visible === 'true') {
-            closeNavigation()    
+            closeNavigation(navigation, navigationToggle);
         } else {
-            openNavigation(); 
+            openNavigation(navigation, navigationToggle); 
         }
     });
-
-    function openNavigation() {
-        navigation.dataset.visible = 'true';
-        navigationToggle.setAttribute('aria-expanded', true);
-    }
-
-    function closeNavigation() {
-        navigation.dataset.visible = 'false';
-        navigationToggle.setAttribute('aria-expanded', false);
-    }
 
     document.addEventListener('click', (event) => {
         const target = event.target;
         if (target !== navigationToggle && target.closest('#project-navigation') === null && navigation.dataset.visible === 'true') {
-            closeNavigation()
+            closeNavigation(navigation, navigationToggle)
         }
     });
+}
+
+function openNavigation(navigation, navigationToggle) {
+    navigation.dataset.visible = 'true';
+    navigationToggle.setAttribute('aria-expanded', true);
+}
+
+function closeNavigation(navigation, navigationToggle) {
+    navigation.dataset.visible = 'false';
+    navigationToggle.setAttribute('aria-expanded', false);
 }
 
 export {

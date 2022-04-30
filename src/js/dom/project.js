@@ -2,7 +2,7 @@ import { render, createElement, createEvent, createButton} from './utils';
 import { createTask, createTaskModal } from './task';
 import { createModal, openModal, closeModal } from './modal';
 import { isFormValid } from './form';
-import { createSectionItem } from './navigation';
+import { changeActiveProject, createSectionItem } from './navigation';
 import Project from '../models/project';
 import TodoList from '../models/todo';
 
@@ -221,12 +221,15 @@ function createProjectForm(projectModel = null) {
                         form.elements['project-name'].value
                     );
                     TodoList.addProject(newProject);
+
                     const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
                     render(
                         createSectionItem(newProject),
                         userProjectsContainer,
                         userProjectsContainer.children.length === 1 && userProjectsContainer.children[0].tagName.toLowerCase() === 'p'
                     );
+
+                    changeActiveProject(newProject);
                 }
 
                 closeModal(form.closest('.modal'));
