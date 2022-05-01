@@ -18,7 +18,17 @@ class Task {
         this.dueDate = dueDate;
         this.priority = priority;
         this.completed = completed;
-        this.project = null;
+        this.projects = null;
+    }
+
+    static create(data) {
+        const task = new Task();
+        if (data.dueDate) {
+            task.dueDate = data.dueDate;
+            // TODO: Maybe I shouldn't modify passed 'data' object?
+            delete data.dueDate;
+        }
+        return Object.assign(task, data);
     }
 
     get id() {
@@ -30,7 +40,7 @@ class Task {
     }
 
     set dueDate(newDate) {
-        this.#dueDate = newDate;
+        this.#dueDate = new Date(newDate);
         this.#dueDate.setHours(0, 0, 0, 0);
     }
 
@@ -40,17 +50,13 @@ class Task {
     }
 
     update(data) {
-        this.title = data.title;
-        this.description = data.description;
-        this.dueDate = data.dueDate;
-        this.priority = data.priority;
-
         if (this.project.id !== data.project.id) {
             this.project.removeTask(this);
             data.project.addTask(this);
         }
-
-        return this;
+        // TODO: Maybe I shouldn't modify passed 'data' object?
+        delete data.project;
+        return Object.assign(this, data);
     }
 
     toJSON() {
@@ -61,16 +67,6 @@ class Task {
             priority: this.priority,
             completed: this.completed
         };
-    }
-
-    static fromJSON(data) {
-        return new Task(
-            data.title,
-            data.description,
-            new Date(data.dueDate),
-            data.priority,
-            data.completed
-        );
     }
 }
 

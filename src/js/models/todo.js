@@ -1,151 +1,191 @@
-import { isEqual, isAfter } from "date-fns";
-import Storage from "./storage";
+import { isEqual, isAfter } from 'date-fns';
+import { getTodaysDate } from '../utils';
+import Project from './project';
 
-class TodoList {
-    static #projects = Storage.loadProjects();
+class Todo {
+    static #storage;
+    static #projects;
+    static #DEFAULT_DATA = {
+        default: {
+            title: 'General',
+            items: [
+                new Project('Inbox', [], true, true, false),
+                new Project('Today', [], false, true, true),
+                new Project('Upcoming', [], false, true, true)
+            ]
+        },
+        userProjects: {
+            title: 'Projects',
+            items: []
+        }
+    }; 
+
+    static initializeStorage(storage) {
+        this.#storage = storage;
+        let data = this.#storage.loadData();
+        if (!data) {
+            this.#projects = this.#DEFAULT_DATA;
+        } else {
+            for (const key in data) {
+                data[key].items = data[key].items.map((item) => Project.create(item))
+            }
+            this.#projects = data;
+        }
+    }
     
-    static getProjectById(projectId) {
-        for (const section in this.#projects) {
-            const project = this.#projects[section].items.find((item) => item.id === projectId);
+    static #getProject(findCallback) {
+        for (const sectionKey in this.#projects) {
+            const project = this.#projects[sectionKey].items.find(findCallback);
             if (project) {
                 return project;
             }
         }
-        return undefined;
+        return null;
+    }
+
+    static #saveProjects() {
+        this.#storage.saveData(this.#projects);
+    }
+
+    static getProjectById(projectId) {
+        return this.#getProject(({ id }) => id === projectId);
     }
 
     static getDefaultProject() {
-        return this.#projects.default.items.find((item) => item.perserve && !item.dummy);
+        return this.#getProject(({ perserve, dummy }) => perserve && !dummy);
     }
 
     static getActiveProject() {
-        for (const section in this.#projects) {
-            for (const project of this.#projects[section].items) {
-                if (project.active) {
-                    return project;
-                }
+        return this.#getProject(({ active }) => active);
+    }
+
+    static getProjects(filterCallback = null) {
+        return Object.values(this.#projects).reduce((aggregator, { items }) => {
+            if (filterCallback) {
+                return aggregator.concat(items.filter(filterCallback));
             }
-        }
-        return undefined;
-    }
-
-    static getSections() {
-        return Object.assign({}, this.#projects);
-    }
-
-    static getProjects() {
-        return Object.keys(this.#projects).reduce((aggregator, section) => {
-            return aggregator.concat(this.#projects[section].items.filter((item) => !item.dummy))
+            return aggregator.concat(items);
         }, []);
+    }
+
+    static getProjectsSections() {
+        return Object.assign({}, this.#projects);
     }
 
     static addProject(newProject) {
         const project = this.getProjectById(newProject.id);
-        if (!project) {
-            this.#projects.userProjects.items.push(newProject);
-            Storage.saveProjects(this.#projects);
+        if (project) {
+            return newProject;
         }
+        this.#projects.userProjects.items.push(newProject);
+        this.#saveProjects();
         return newProject;
     }
 
-    static addProjects(newProjects) {
-        newProjects.forEach(this.addProject, this);
-        return newProjects;
+    static updateProject(projectId, projectData) {
+        const project = this.getProjectById(projectId);
+        if (!project) {
+            return null;
+        }
+        project.update(projectData);
+        this.#saveProjects();
+        return project;
     }
 
-    static updateProject(projectId, data) {
-        const project = TodoList.getProjectById(projectId);
+    static removeProject(projectId) {
+        const project = this.getProjectById(projectId);
         if (!project) {
+            return null;
+        }
+        this.#projects.userProjects.items = this.#projects.userProjects.items.filter(({ id }) => id !== project.id);
+        this.#saveProjects();
+        return project;
+    }
+
+    static changeActiveProject(projectId) {
+        const newActiveProject = this.getProjectById(projectId);
+        if (!newActiveProject) {
             return false;
         }
-        project.update(data);
-        Storage.saveProjects(this.#projects);
-        return project;
+        const currentActiveProject = this.getActiveProject();
+        currentActiveProject.active = false;
+        newActiveProject.active = true;
+        this.#saveProjects();
     }
 
-    static removeProject(project) {
-        this.#projects.userProjects.items = this.#projects.userProjects.items.filter((item) => item.id !== project.id);
-        Storage.saveProjects(this.#projects);
-        return project;
-    }
-
-    static getTask(taskId) {
-        for (const section in this.#projects) {
-            for (const project of this.#projects[section].items) {
-                const task = project.getTask(taskId);
+    static getTaskById(taskId) {
+        for (const sectionName in this.#projects) {
+            for (const item of this.#projects[sectionName].items) {
+                const task = item.getTaskById(taskId);
                 if (task) {
                     return task;
                 }
             }
         }
-        return undefined;
+        return null;
     }
 
-    static getTasks() {
-        return Object.keys(this.#projects).reduce((aggregator, section) => {
-            const projects = this.#projects[section].items.filter((item) => !item.dummy);
-            return aggregator.concat(...projects.map((project) => project.getTasks()));
-        }, []);
+    static getTasks(filterCallback = null) {
+        const tasks = this.getProjects(({ dummy }) => !dummy).flatMap((item) => item.getTasks());
+        if (filterCallback) {
+            return tasks.filter(filterCallback);
+        }
+        return tasks;
     }
 
     static getTodaysTasks() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return this.getTasks().filter((task) => isEqual(task.dueDate, today));
+        const today = getTodaysDate();
+        return this.getTasks(({ dueDate }) => isEqual(dueDate, today));
     }
 
     static getUpcomingTasks() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return this.getTasks().filter((task) => isEqual(task.dueDate, today) || isAfter(task.dueDate, today));
+        const today = getTodaysDate();
+        return this.getTasks(({ dueDate }) => isEqual(dueDate, today) || isAfter(dueDate, today));
     }
 
     static addTask(projectId, newTask) {
-        const project = this.getProjectById(projectId) ?? this.getDefaultProject();
+        const project = this.getProjectById(projectId);
+        if (!project) {
+            return null;
+        }
         project.addTask(newTask);
-        Storage.saveProjects(this.#projects);
-        return project;
-    }
-
-    static addTasks(projectId, newTasks) {
-        const project = this.getProjectById(projectId) ?? this.getDefaultProject();
-        project.addTasks(newTasks);
-        return newTasks;
+        this.#saveProjects();
+        return newTask;
     }
 
     static updateTask(taskId, data) {
-        const task = this.getTask(taskId);
+        const task = this.getTaskById(taskId);
         if (!task) {
-            return false;
+            return null;
         }
         task.update(data);
-        Storage.saveProjects(this.#projects);
+        this.#saveProjects();
         return task;
     }
 
-    static removeTask(projectId, oldTask) {
-        const project = this.getProjectById(projectId) ?? this.getDefaultProject();     
-        project.removeTask(oldTask);
-        Storage.saveProjects(this.#projects);
-        return oldTask;
+    static removeTask(taskId) {
+        const projects = this.getProjects((project) => project.getTaskById(taskId));
+        let removedTask = null;
+        for (const project of projects) {
+            const task = project.getTaskById(taskId);
+            project.removeTask(task);
+            if (!removedTask) {
+                removedTask = task;
+            }
+        }
+        this.#saveProjects();
+        return removedTask;
     }
 
     static toggleCompleted(taskId) {
-        const task = this.getTask(taskId);
+        const task = this.getTaskById(taskId);
         if (!task) {
             return false;
         }
         const completed = task.toggleCompleted();
-        Storage.saveProjects(this.#projects);
+        this.#saveProjects();
         return completed;
-    }
-
-    static changeActiveProject(newActiveProject) {
-        const currentActiveProject = this.getActiveProject();
-        currentActiveProject.active = false;
-        newActiveProject.active = true;
-        Storage.saveProjects(this.#projects);
     }
 }
 
-export default TodoList;
+export default Todo;

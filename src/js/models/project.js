@@ -14,51 +14,67 @@ class Project {
         this.addTasks(tasks);
     }
 
+    static create(data) {
+        const project = new Project();
+        if (data.tasks) {
+            project.addTasks(data.tasks.map((task) => Task.create(task)));
+            // TODO: Maybe I shouldn't modify passed 'data' object?
+            delete data.tasks;
+        }
+        return Object.assign(project, data);
+    }
+
     get id() {
         return this.#id;
     }
 
     update(data) {
-        this.name = data.name;
-        return this;
+        return Object.assign(this, data);
     }
 
-    getTask(taskId) {
-        return this.#tasks.find((task) => task.id === taskId);
+    getTaskById(taskId) {
+        return this.#tasks.find(({ id }) => id === taskId);
     }
     
-    getTasks() {
-        return this.#tasks.slice(0);
+    getTasks(filterCallback = null) {
+        const copiedTasks = this.#tasks.slice(0);
+        if (filterCallback) {
+            return copiedTasks.filter(filterCallback);
+        }
+        return copiedTasks;
     }
 
-    addTask(newTask, reference = true) {
-        const task = this.getTask(newTask.id);
+    addTask(newTask) {
+        const task = this.getTaskById(newTask.id);
         if (!task) {
             this.#tasks.push(newTask);
-            if (reference) {
+            if (!this.dummy) {
                 newTask.project = this;
             }
         }
         return newTask;
     }
 
-    addTasks(newTasks, reference = true) {
-        newTasks.forEach((task) => this.addTask(task, reference));
+    addTasks(newTasks) {
+        newTasks.forEach(this.addTask, this);
         return newTasks;
     }
 
-    removeTask(oldTask, dereference = true) {
-        this.#tasks = this.#tasks.filter((task) => task.id !== oldTask.id);
-        if (dereference) {
+    removeTask(oldTask) {
+        this.#tasks = this.#tasks.filter(({ id }) => id !== oldTask.id);
+        if (!this.dummy) {
             oldTask.project = null;
         }
+        return oldTask;
     }
 
-    removeTasks(dereference = true) {
-        if (dereference) {
+    removeTasks() {
+        if (!this.dummy) {
             this.#tasks.forEach((task) => task.project = null);
         }
+        const oldTasks = this.getTasks();
         this.#tasks = [];
+        return oldTasks;
     }
 
     toJSON() {
@@ -67,18 +83,8 @@ class Project {
             active: this.active,
             perserve: this.perserve,
             dummy: this.dummy,
-            tasks: this.#tasks
+            tasks: this.getTasks()
         };
-    }
-
-    static fromJSON(data) {
-        return new Project(
-            data.name,
-            data.tasks.map((task) => Task.fromJSON(task)),
-            data.active,
-            data.perserve,
-            data.dummy
-        );
     }
 }
 

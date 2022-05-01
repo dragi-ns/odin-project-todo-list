@@ -1,4 +1,8 @@
-import { createElement, createButton, createEvent } from './utils';
+import {
+    createElement,
+    createButton,
+    createEvent 
+} from './utils';
 
 function createModal(options) {
     return createElement(

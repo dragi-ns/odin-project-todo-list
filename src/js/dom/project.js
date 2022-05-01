@@ -1,10 +1,14 @@
-import { render, createElement, createEvent, createButton} from './utils';
+import { 
+    render, 
+    createElement, 
+    createEvent, 
+    createButton
+} from './utils';
 import { createTask, createTaskModal } from './task';
 import { createModal, openModal, closeModal } from './modal';
 import { isFormValid } from './form';
 import { changeActiveProject, createSectionItem } from './navigation';
-import Project from '../models/project';
-import TodoList from '../models/todo';
+import { Todo, Project } from '../models';
 
 function createProject(project) {
     return createElement({
@@ -96,7 +100,7 @@ function createProjectEditAction() {
         events: [
             createEvent('click', () => {
                 const modal = createProjectModal(
-                    TodoList.getActiveProject()
+                    Todo.getActiveProject()
                 );
                 render(modal, document.body);
                 openModal(modal);
@@ -117,7 +121,7 @@ function createProjectDeleteAction() {
         showOnlyIcon: true,
         events: [
             createEvent('click', () => {
-                const modal = createProjectConfirmationModal(TodoList.getActiveProject());
+                const modal = createProjectConfirmationModal(Todo.getActiveProject());
                 render(modal, document.body);
                 openModal(modal);
             })
@@ -202,7 +206,7 @@ function createProjectForm(projectModel = null) {
 
                 if (projectModel) {
                     const oldProjectName = projectModel.name;
-                    TodoList.updateProject(projectModel.id, {
+                    Todo.updateProject(projectModel.id, {
                         name: form.elements['project-name'].value
                     });
                     if (projectModel.name !== oldProjectName) {
@@ -220,7 +224,7 @@ function createProjectForm(projectModel = null) {
                     const newProject = new Project(
                         form.elements['project-name'].value
                     );
-                    TodoList.addProject(newProject);
+                    Todo.addProject(newProject);
 
                     const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
                     render(
@@ -318,7 +322,7 @@ function createProjectConfirmationModal(projectModel) {
                 },
                 events: [
                     createEvent('click', (event) => {
-                        const defaultProject = TodoList.getDefaultProject();
+                        const defaultProject = Todo.getDefaultProject();
 
                         document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).remove();
 
@@ -331,15 +335,14 @@ function createProjectConfirmationModal(projectModel) {
                         }
 
                         document.querySelector(`#project-navigation [data-project-id="${defaultProject.id}"]`).classList.add('active');
-
                         render(
                             createProject(defaultProject), 
                             document.querySelector('#main'),
                             true
                         );
 
-                        TodoList.changeActiveProject(defaultProject);
-                        TodoList.removeProject(projectModel);
+                        Todo.changeActiveProject(defaultProject.id);
+                        Todo.removeProject(projectModel.id);
 
                         closeModal(event.currentTarget.closest('.modal'));
                     })

@@ -1,18 +1,12 @@
 import '../css/index.css';
-import { render } from './dom/utils';
+import { Todo, Storage } from './models';
 import { createNavigation, createProject } from './dom';
-import TodoList from './models/todo';
+import { render } from './dom/utils';
 
 document.addEventListener('DOMContentLoaded', () => {
+    Todo.initializeStorage(new Storage('todoin'));
+
     const mainElement = document.querySelector('#main');
-
-    render(
-        createNavigation(TodoList.getSections()),
-        mainElement
-    );
-
-    render(
-        createProject(TodoList.getActiveProject()),
-        mainElement
-    );
+    render(createNavigation(Todo.getProjectsSections()), mainElement);
+    render(createProject(Todo.getActiveProject()), mainElement);
 });

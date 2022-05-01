@@ -1,10 +1,12 @@
-import { isEqual, isAfter } from 'date-fns';
-import { createButton, createElement, createEvent, render } from './utils';
+import { 
+    createButton,
+    createElement, 
+    createEvent, 
+    render 
+} from './utils';
 import { createProject, createProjectModal } from './project';
 import { openModal } from './modal';
-import TodoList from '../models/todo.js';
-
-
+import { Todo } from '../models';
 
 function createNavigation(sections) {
     const navigationContainer = createElement({
@@ -112,7 +114,7 @@ function createSectionItems(projectModels) {
 
 function createSectionItem(projectModel) {
     return createElement({
-        tagName: 'baddTaskutton',
+        tagName: 'button',
         attributes: {
             class: 'navigation-section-item btn' + (projectModel.active ? ' active' : ''),
             'data-project-id': projectModel.id
@@ -121,11 +123,11 @@ function createSectionItem(projectModel) {
         events: [
             createEvent('click', () => {
                 if (projectModel.dummy) {
-                    projectModel.removeTasks(false);
+                    projectModel.removeTasks();
                     if (projectModel.name === 'Today') {
-                        projectModel.addTasks(TodoList.getTodaysTasks(), false);
+                        projectModel.addTasks(Todo.getTodaysTasks());
                     } else if (projectModel.name === 'Upcoming') {
-                        projectModel.addTasks(TodoList.getUpcomingTasks(), false);
+                        projectModel.addTasks(Todo.getUpcomingTasks());
                     }
                 }
                 changeActiveProject(projectModel);
@@ -135,7 +137,7 @@ function createSectionItem(projectModel) {
 }
 
 function changeActiveProject(projectModel) {
-    const currentActiveProjectModel = TodoList.getActiveProject();
+    const currentActiveProjectModel = Todo.getActiveProject();
     if (projectModel.id === currentActiveProjectModel.id) {
         return;
     }
@@ -150,7 +152,7 @@ function changeActiveProject(projectModel) {
         nextActiveButton.classList.add('active');
     }
 
-    TodoList.changeActiveProject(projectModel);
+    Todo.changeActiveProject(projectModel.id);
 
     render(
         createProject(projectModel), 
@@ -160,12 +162,12 @@ function changeActiveProject(projectModel) {
 
     closeNavigation(
         document.querySelector('#project-navigation'),
-        document.querySelector('[aria-controls="project-navigation"]')
+        document.querySelector('button[data-target="project-navigation"]')
     );
 }
 
 function initialize_navigation_toggle(navigation) {
-    const navigationToggle = document.querySelector(`[aria-controls="${navigation.getAttribute('id')}"]`);
+    const navigationToggle = document.querySelector(`button[data-target="${navigation.getAttribute('id')}"]`);
     navigationToggle.addEventListener('click', () => {
         if (navigation.dataset.visible === 'true') {
             closeNavigation(navigation, navigationToggle);
@@ -184,12 +186,12 @@ function initialize_navigation_toggle(navigation) {
 
 function openNavigation(navigation, navigationToggle) {
     navigation.dataset.visible = 'true';
-    navigationToggle.setAttribute('aria-expanded', true);
+    navigationToggle.setAttribute('data-expanded', true);
 }
 
 function closeNavigation(navigation, navigationToggle) {
     navigation.dataset.visible = 'false';
-    navigationToggle.setAttribute('aria-expanded', false);
+    navigationToggle.setAttribute('data-expanded', false);
 }
 
 export {

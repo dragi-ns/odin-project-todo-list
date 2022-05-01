@@ -1,35 +1,24 @@
-import Project from './project';
-
 class Storage {
-    static #DEFAULT_DATA = {
-        default: {
-            title: 'General',
-            items: [
-                new Project('Inbox', [], true, true, false),
-                new Project('Today', [], false, true, true),
-                new Project('Upcoming', [], false, true, true)
-            ]
-        },
-        userProjects: {
-            title: 'Projects',
-            items: []
-        }
-    };
+    #storageKey;
 
-    static loadProjects() {
-        const data = localStorage.getItem('todoin');
-        if (!data) {
-            return this.#DEFAULT_DATA;
-        }
-        const parsedSections = JSON.parse(data);
-        for (const parsedSection in parsedSections) {
-            parsedSections[parsedSection].items = parsedSections[parsedSection].items.map((item) => Project.fromJSON(item))
-        }
-        return parsedSections;
+    constructor(storageKey) {
+        this.#storageKey = storageKey;
     }
 
-    static saveProjects(data) {
-        localStorage.setItem('todoin', JSON.stringify(data));
+    get storageKey() {
+        return this.#storageKey;
+    }
+
+    loadData() {
+        const data = localStorage.getItem(this.#storageKey);
+        if (!data) {
+            return null;
+        }
+        return JSON.parse(data);
+    }
+
+    saveData(data) {
+        localStorage.setItem(this.#storageKey, JSON.stringify(data));
     }
 }
 
