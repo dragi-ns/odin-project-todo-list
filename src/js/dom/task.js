@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, isBefore } from 'date-fns';
 import { 
     render, 
     createElement, 
@@ -8,7 +8,7 @@ import {
 import { createModal, openModal, closeModal } from './modal';
 import { changeActiveProject } from './navigation';
 import { isFormValid } from './form';
-import { toTitleCase } from '../utils';
+import { toTitleCase, getTodaysDate } from '../utils';
 import { Todo, Task } from '../models';
 
 function createTask(task) {
@@ -17,7 +17,9 @@ function createTask(task) {
         attributes: {
             class: 'task',
             'data-task-id': task.id,
-            'data-task-priority': task.priority
+            'data-task-priority': task.priority,
+            'data-task-completed': task.completed,
+            'data-task-overdue': isBefore(task.dueDate, getTodaysDate())
         },
         children: [
             createTaskHeader(task),
@@ -77,7 +79,12 @@ function createTaskSummary(task) {
             createEvent('click', (event) => {
                 const taskContainer = event.currentTarget.closest('.task');
                 if (taskContainer) {
-                    taskContainer.classList.toggle('expanded');
+                    const expanded = taskContainer.dataset.expanded;
+                    if (expanded === 'true') {
+                        taskContainer.dataset.expanded = false;
+                    } else {
+                        taskContainer.dataset.expanded = true;
+                    }
                 }
             })
         ]

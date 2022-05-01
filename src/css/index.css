@@ -245,7 +245,7 @@ body {
     font-size: 1.8rem;
 }
 
-.primary-header .mobile-nav-toggle[aria-expanded='true']::before {
+.primary-header .mobile-nav-toggle[data-expanded='true']::before {
     content: '\F0156';
 }
 
@@ -401,10 +401,15 @@ main {
 }
 
 .project .task {
-    padding: 10px;
+    position: relative;
+    padding: 15px 10px;
     border-radius: 4px;
-    border-left: 5px solid transparent;
+    border: 5px solid transparent;
     box-shadow: hsl(var(--dark-color) / .25) 0px 0px 5px 0px, hsl(var(--dark-color) / .25) 0px 0px 1px 0px;
+}
+
+.project .task[data-task-completed="true"] {
+    opacity: .5;
 }
 
 .project .task[data-task-priority="normal"] {
@@ -421,6 +426,21 @@ main {
 
 .project .task[data-task-priority="high"] {
     border-left-color: #e74c3c; 
+}
+
+.project .task[data-task-overdue="true"]:not([data-task-completed="true"]) {
+    border-color: #e74c3c;
+}
+
+.project .task[data-task-overdue="true"]:not([data-task-completed="true"])::before {
+    content: 'overdue';
+    position: absolute;
+    padding: 0 5px;
+    top: 0;
+    right: 0;
+    background-color: #e74c3c;
+    color: white;
+    font-size: .8rem;
 }
 
 .project .task-header {
@@ -479,7 +499,7 @@ main {
     transition: max-height 250ms ease-in-out;
 }
 
-.project .task.expanded .task-details {
+.project .task[data-expanded="true"] .task-details {
     max-height: 200px;
 }
 
