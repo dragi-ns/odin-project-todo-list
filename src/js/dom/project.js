@@ -1,3 +1,4 @@
+import { isBefore, isAfter } from 'date-fns';
 import { 
     render, 
     createElement, 
@@ -62,6 +63,10 @@ function createProjectHeaderActions(perserve, dummy) {
     }
 
     children.push(createProjectFilterTasksAction());
+
+    if (!dummy) {
+        children.push(createProjectSortTasksAction());
+    }
 
     return createElement({
         attributes: {
@@ -159,6 +164,68 @@ function createProjectFilterTasksAction() {
                     iconContainer.classList.add('mdi-eye-minus');
                     projectContainer.dataset.showCompletedTasks = false;
                     tasks = project.getTasks((task) => !task.completed);
+                }
+                render(
+                    createProjectTasks(tasks),
+                    projectContainer,
+                    true
+                );
+            })
+        ]
+    });
+}
+
+function createProjectSortTasksAction() {
+    return createButton({
+        btnText: 'Toggle tasks sort',
+        btnAttributes: {
+            class: 'btn btn--square btn--medium toggle-tasks-sort'
+        },
+        iconAttributes: {
+            class: 'mdi mdi-sort-variant-remove'
+        },
+        showOnlyIcon: true,
+        events: [
+            createEvent('click', (event) => {
+                const project = Todo.getActiveProject();
+                const projectContainer = event.currentTarget.closest('#project');
+                const tasks = project.getTasks(
+                    projectContainer.dataset.showCompletedTasks !== 'true' ? (({ completed }) => !completed) : null
+                );
+                const iconContainer = event.currentTarget.querySelector('.mdi');
+                if (iconContainer.classList.contains('mdi-sort-variant-remove')) {
+                    iconContainer.classList.remove('mdi-sort-variant-remove');
+                    iconContainer.classList.add('mdi-sort-calendar-ascending');
+                    tasks.sort((taskA, taskB) => {
+                        // sort a before b
+                        if (isBefore(taskA.dueDate, taskB.dueDate)) {
+                            return -1;
+                        }
+                        // sort b before a
+                        if (isAfter(taskA.dueDate, taskB.dueDate)) {
+                            return 1;
+                        }
+                        // dont change order
+                        return 0;
+                    });
+                } else if (iconContainer.classList.contains('mdi-sort-calendar-ascending')) {
+                    iconContainer.classList.remove('mdi-sort-calendar-ascending');
+                    iconContainer.classList.add('mdi-sort-calendar-descending');
+                    tasks.sort((taskA, taskB) => {
+                        // sort b before a
+                        if (isBefore(taskA.dueDate, taskB.dueDate)) {
+                            return 1;
+                        }
+                        // sort a before b
+                        if (isAfter(taskA.dueDate, taskB.dueDate)) {
+                            return -1;
+                        }
+                        // dont change order
+                        return 0;
+                    });
+                } else {
+                    iconContainer.classList.remove('mdi-sort-calendar-descending');
+                    iconContainer.classList.add('mdi-sort-variant-remove');
                 }
                 render(
                     createProjectTasks(tasks),
