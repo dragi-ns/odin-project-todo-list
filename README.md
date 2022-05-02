@@ -1,4 +1,4 @@
-# Restaurant page - Odin project
+# Todo List - Odin project
 Todo list implemented in vanilla Javascript and webpack module bundler. This project was an assignment from [Odin's Full Stack JavaScript path](https://www.theodinproject.com/lessons/node-path-javascript-todo-list).
 
 ## Screenshots
