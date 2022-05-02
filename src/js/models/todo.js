@@ -1,4 +1,4 @@
-import { isEqual, isAfter } from 'date-fns';
+import { isEqual, isAfter, isBefore } from 'date-fns';
 import { getTodaysDate } from '../utils';
 import Project from './project';
 
@@ -27,10 +27,19 @@ class Todo {
             this.#projects = this.#DEFAULT_DATA;
         } else {
             for (const key in data) {
-                data[key].items = data[key].items.map((item) => Project.create(item))
+                data[key].items = data[key].items.map((item) => Project.create(item));
             }
             this.#projects = data;
         }
+
+        this.getProjects(({ dummy }) => dummy).forEach((project) => {
+            project.removeTasks();
+            if (project.name === 'Today') {
+                project.addTasks(this.getTodaysTasks());
+            } else if (project.name === 'Upcoming') {
+                project.addTasks(this.getUpcomingTasks());
+            }
+        });
     }
     
     static #getProject(findCallback) {
@@ -140,7 +149,18 @@ class Todo {
 
     static getUpcomingTasks() {
         const today = getTodaysDate();
-        return this.getTasks(({ dueDate }) => isEqual(dueDate, today) || isAfter(dueDate, today));
+        return this.getTasks(({ dueDate }) => isEqual(dueDate, today) || isAfter(dueDate, today)).sort((taskA, taskB) => {
+            // sort a before b
+            if (isBefore(taskA.dueDate, taskB.dueDate)) {
+                return -1;
+            }
+            // sort b before a
+            if (isAfter(taskA.dueDate, taskB.dueDate)) {
+                return 1;
+            }
+            // dont change order
+            return 0;
+        });
     }
 
     static addTask(projectId, newTask) {
