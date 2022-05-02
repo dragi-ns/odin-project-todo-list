@@ -56,10 +56,25 @@ function createTaskCompleteToggle(completed) {
         events: [
             createEvent('change', (event) => {
                 const taskContainer = event.currentTarget.closest('.task');
+                const projectContainer = taskContainer.closest('#project');
                 if (taskContainer) {
-                    taskContainer.dataset.taskCompleted = Todo.toggleCompleted(
+                    const taskCompleted = Todo.toggleCompleted(
                         taskContainer.dataset.taskId
                     );
+                    taskContainer.dataset.taskCompleted = taskCompleted;
+                    if (taskCompleted && projectContainer.dataset.showCompletedTasks === 'false') {
+                        taskContainer.animate([
+                            { transform: 'translateX(0)' },
+                            { transform: 'translateX(100%)' }
+                        ], {
+                            delay: 250,
+                            duration: 350,
+                            iterations: 1,
+                            fill: 'forwards'
+                        }).addEventListener('finish', () => {
+                            taskContainer.remove();
+                        });
+                    }
                 }
             })
         ]

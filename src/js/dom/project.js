@@ -16,11 +16,12 @@ function createProject(project) {
         attributes: {
             id: 'project',
             class: 'project',
-            'data-project-id': project.id
+            'data-project-id': project.id,
+            'data-show-completed-tasks': false
         },
         children: [
             createProjectHeader(project),
-            createProjectTasks(project.getTasks())
+            createProjectTasks(project.getTasks((task) => !task.completed))
         ]
     });
 }
@@ -59,6 +60,9 @@ function createProjectHeaderActions(perserve, dummy) {
             createProjectDeleteAction()
         )
     }
+
+    children.push(createProjectFilterTasksAction());
+
     return createElement({
         attributes: {
             class: 'project-actions'
@@ -129,7 +133,45 @@ function createProjectDeleteAction() {
     });
 }
 
+function createProjectFilterTasksAction() {
+    return createButton({
+        btnText: 'Toggle tasks filter',
+        btnAttributes: {
+            class: 'btn btn--square btn--medium toggle-tasks-filter'
+        },
+        iconAttributes: {
+            class: 'mdi mdi-eye-minus'
+        },
+        showOnlyIcon: true,
+        events: [
+            createEvent('click', (event) => {
+                const project = Todo.getActiveProject();
+                let tasks = null;
+                const projectContainer = event.currentTarget.closest('#project');
+                const iconContainer = event.currentTarget.querySelector('.mdi');
+                if (iconContainer.classList.contains('mdi-eye-minus')) {
+                    iconContainer.classList.remove('mdi-eye-minus');
+                    iconContainer.classList.add('mdi-eye-check');
+                    projectContainer.dataset.showCompletedTasks = true;
+                    tasks = project.getTasks();
+                } else {
+                    iconContainer.classList.remove('mdi-eye-check');
+                    iconContainer.classList.add('mdi-eye-minus');
+                    projectContainer.dataset.showCompletedTasks = false;
+                    tasks = project.getTasks((task) => !task.completed);
+                }
+                render(
+                    createProjectTasks(tasks),
+                    projectContainer,
+                    true
+                );
+            })
+        ]
+    });
+}
+
 function createProjectTasks(tasks) {
+    console.log(tasks);
     return createElement({
         attributes: {
             class: 'tasks'
