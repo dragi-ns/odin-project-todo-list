@@ -130,20 +130,11 @@ function createProjectDeleteAction() {
 }
 
 function createProjectTasks(tasks) {
-    const children = [];
-    if (tasks.length === 0) {
-        children.push(createElement({
-            tagName: 'p',
-            content: 'There are no tasks!'
-        }));
-    } else {
-        children.push(...tasks.map((task) => createTask(task)));
-    }
     return createElement({
         attributes: {
             class: 'tasks'
         },
-        children
+        children: [...tasks.map((task) => createTask(task))]
     });
 }
 
@@ -227,11 +218,7 @@ function createProjectForm(projectModel = null) {
                     Todo.addProject(newProject);
 
                     const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
-                    render(
-                        createSectionItem(newProject),
-                        userProjectsContainer,
-                        userProjectsContainer.children.length === 1 && userProjectsContainer.children[0].tagName.toLowerCase() === 'p'
-                    );
+                    render(createSectionItem(newProject), userProjectsContainer);
 
                     changeActiveProject(newProject);
                 }
@@ -325,16 +312,8 @@ function createProjectConfirmationModal(projectModel) {
                         const defaultProject = Todo.getDefaultProject();
 
                         document.querySelector(`#user-projects [data-project-id="${projectModel.id}"]`).remove();
-
-                        const userProjectsContainer = document.querySelector('#user-projects .navigation-section-items');
-                        if (userProjectsContainer.children.length === 0) {
-                            render(
-                                createElement({ tagName: 'p', content: 'There are no projects!'}),
-                                userProjectsContainer
-                            );
-                        }
-
                         document.querySelector(`#project-navigation [data-project-id="${defaultProject.id}"]`).classList.add('active');
+
                         render(
                             createProject(defaultProject), 
                             document.querySelector('#main'),

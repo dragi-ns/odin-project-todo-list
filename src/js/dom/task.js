@@ -470,12 +470,6 @@ function createTaskForm(taskModel = null) {
                         const currentActiveProject = Todo.getActiveProject();
                         if (!currentActiveProject.dummy && taskModel.project.id !== currentActiveProject.id) {
                             parentElement.removeChild(oldChild);
-                            if (parentElement.children.length === 0) {
-                                parentElement.appendChild(createElement({
-                                    tagName: 'p',
-                                    content: 'There are no tasks!'
-                                }));
-                            }
                         }
                     } else {
                         parentElement.replaceChild(createTask(taskModel), oldChild);
@@ -492,11 +486,7 @@ function createTaskForm(taskModel = null) {
                     if (newTask.project.active) {
                         const tasksContainer = document.querySelector(`#project[data-project-id="${newTask.project.id}"] .tasks`);
                         if (tasksContainer) {
-                            render(
-                                createTask(newTask),
-                                tasksContainer,
-                                tasksContainer.children.length === 1 && tasksContainer.children[0].tagName.toLowerCase() === 'p'
-                            );
+                            render(createTask(newTask), tasksContainer);
                         }
                     }
                 }
@@ -591,12 +581,6 @@ function createTaskConfirmationModal(taskModel) {
                         const parentElement = document.querySelector('#project .tasks');
                         const oldChild = parentElement.querySelector(`[data-task-id="${taskModel.id}"]`);
                         parentElement.removeChild(oldChild);
-                        if (parentElement.children.length === 0) {
-                            render(
-                                createElement({ tagName: 'p', content: 'There are no tasks!'}),
-                                parentElement 
-                            );
-                        }
                         closeModal(event.currentTarget.closest('.modal'));
                     })
                 ]

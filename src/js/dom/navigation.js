@@ -95,20 +95,11 @@ function createSectionHeaderAction() {
 }
 
 function createSectionItems(projectModels) {
-    const children = [];
-    if (projectModels.length === 0) {
-        children.push(createElement({
-            tagName: 'p',
-            content: 'There are no projects!'
-        }));
-    } else {
-        children.push(...projectModels.map((projectModel) => createSectionItem(projectModel)));
-    }
     return createElement({
         attributes: {
             class: 'navigation-section-items'
         },
-        children
+        children: [...projectModels.map((projectModel) => createSectionItem(projectModel))]
     });
 }
 

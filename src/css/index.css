@@ -360,6 +360,10 @@ main {
     row-gap: 15px;
 }
 
+.project-navigation .navigation-section-items:empty::before {
+    content: 'There are no projects!';
+}
+
 .project-navigation .navigation-section-item {
     justify-content: left;
     padding: 5px 10px;
@@ -436,6 +440,10 @@ main {
     row-gap: 15px;
     padding: 15px;
     overflow: auto;
+}
+
+.project .tasks:empty::before {
+    content: 'There are no tasks!';
 }
 
 .project .task {
