@@ -171,7 +171,6 @@ function createProjectFilterTasksAction() {
 }
 
 function createProjectTasks(tasks) {
-    console.log(tasks);
     return createElement({
         attributes: {
             class: 'tasks'
